@@ -24,8 +24,8 @@
 
 # Question 3
 
+**$ traceroute www.columbia.edu**
 ~~~
-$ traceroute www.columbia.edu
 traceroute to www.columbia.edu (128.59.105.24), 30 hops max, 60 byte packets
  1  * * *
  2  ufw1-ae-1-3161.gw.unsw.edu.au (149.171.253.92)  2.676 ms  7.315 ms  7.314 ms
