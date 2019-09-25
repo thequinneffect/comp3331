@@ -19,7 +19,7 @@
 | www.hola.hp           | n, n                  | name or service not known (guessing it should be www.holahp.com) |
 | www.amazon.com        | y, y                  |                                                                  |
 | www.tsinghua.edu.cn   | y, y                  |                                                                  |
-| www.kremlin.ru        | n, y                  | ping is sometimes blocked because of DOS                         |
+| www.kremlin.ru        | n, y                  | ping is sometimes blocked because for security (prevent DOS      |
 | 8.8.8.8               | y, n                  | it is the google public DNS server.                              |
 
 # Question 3
