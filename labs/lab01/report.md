@@ -20,6 +20,6 @@
 | www.amazon.com        | y, y                  |                                                                  |
 | www.tsinghua.edu.cn   | y, y                  |                                                                  |
 | www.kremlin.ru        | n, y                  | ping is sometimes blocked because for security (prevent DOS      |
-| 8.8.8.8               | y, n                  | it is the google public DNS server.                              |
+| 8.8.8.8               | y, n                  | it is the google public DNS server (no web interface/service)    |
 
 # Question 3
