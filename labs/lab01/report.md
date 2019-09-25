@@ -58,6 +58,9 @@ traceroute to www.columbia.edu (128.59.105.24), 30 hops max, 60 byte packets
 22  cc-conc-1-x-cc-core-1.net.columbia.edu (128.59.255.21)  317.033 ms  291.332 ms  314.293 ms
 23  ci.columbia.edu (128.59.105.24)  313.894 ms  313.016 ms  325.494 ms
 ~~~
+* the last one is the destination (www.columbia.edu (128.59.105.24)), so there are 22 routers between my machine and the destination server
+* the first 5 routers appear to be situated at unsw, whilst the aarnet routers 6-8 are in Kensington Perth
+* the packets cross the ocean between routers 9 (113.197.15.201) and 10 (207.231.240.8). router 9 is located in Perth, and router 10 in Seattle. A good hint is the word "sea" in "et-2-1-0.bdr1.a.sea.aarnet.net.au"
 
 ### Part 2
 
