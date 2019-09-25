@@ -2,8 +2,13 @@
 
 # Question 1
 
+### Part 1
+
 * IP address(es) of the website www.koala.com.au : 104.18.60.21 , 104.18.61.21
 * It has multiple IP addresses because it is using multiple servers (clustered servers) to balance the load better (DNS load balancing). 
+
+### Part 2
+
 * IP address 127.0.0.1 has the name "localhost". It is also referred to as the "loopback address".
 * This IP address is special as it is the IP address your computer uses to refer to itself
 
@@ -23,6 +28,8 @@
 | 8.8.8.8               | y, n                  | it is the google public DNS server (no web interface/service)    |
 
 # Question 3
+
+### Part 1
 
 ~~~
 $ traceroute www.columbia.edu
@@ -51,6 +58,8 @@ traceroute to www.columbia.edu (128.59.105.24), 30 hops max, 60 byte packets
 22  cc-conc-1-x-cc-core-1.net.columbia.edu (128.59.255.21)  317.033 ms  291.332 ms  314.293 ms
 23  ci.columbia.edu (128.59.105.24)  313.894 ms  313.016 ms  325.494 ms
 ~~~
+
+### Part 2
 
 ~~~
 $ traceroute  www.ucla.edu
