@@ -209,5 +209,7 @@ traceroute to 203.50.77.53 (203.50.77.53), 30 hops max, 60 byte packets
 11  tengigabitethernet8-1.exi2.melbourne.telstra.net (203.50.80.154)  15.149 ms * *
 ~~~
 
+* I chose to use the two given servers, speedtest - 202.150.221.169 and telstra - 203.50.77.53
+* Both go through different paths in the two directions but there do appear to be common routers e.g. the unsw library ones and also 138.44.5.0/1 which appears in both paths. The last part of the IP addresses do appear to change though, and this is perhaps because slightly different interfaces are used for handling traffic going in a specific direction.
 
 # Question 4
