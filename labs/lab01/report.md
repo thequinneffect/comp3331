@@ -215,25 +215,49 @@ traceroute to 203.50.77.53 (203.50.77.53), 30 hops max, 60 byte packets
 # Question 4
 
 ### Brisbane script outputs
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/bris_delay.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/bris_scat.png)
+~~~
+50 18.786 17.023
+250 19.226 17.162
+500 17.890 17.359
+750 18.666 17.495
+1000 19.327 17.499
+1250 19.920 17.687
+1500 20.283 18.457
+~~~
 
 ### Manila script outputs
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/ph_delay.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/ph_scat.png)
+~~~
+50 319.553 318.391
+250 319.653 318.625
+500 320.247 318.738
+750 319.642 318.907
+1000 319.327 319.023
+1250 319.694 319.136
+1500 319.879 319.260
+~~~
 
 ### Berlin script outputs
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
-![alt text](http://url/to/img.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/de_delay.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/de_scat.png)
+~~~
+50 283.771 283.666
+250 283.861 283.713
+500 283.942 283.810
+750 284.063 283.939
+1000 284.155 284.039
+1250 284.238 284.126
+1500 284.316 284.199
+~~~
 
 * Sydney -> Brisbane is ~730 km, T = 0.002433333 sec = 2.433333 msec, min round-trip (MRT) = 17.023, MRT/T = 6.99
 * Sydney -> Manila is ~6200 km, T = 0.020666667 sec = 20.666667 msec, MRT = 318.391, MRT/T = 15.40
 * Sydney -> Berlin is ~18,000 km, T = 0.06 sec = 60 msec, MRT = 283.666, MRT/T = 4.72
 
-![alt text](http://url/to/img.png)
+![alt text](https://github.com/thequinneffect/comp3331/tree/master/labs/lab01/pics/bar_graph.png)
 
 * the reason the y values are much greater is because our T assumes the packet travels at the speed of light, never stopping for anything. This is obviously not how it works in reality as there are processing times (e.g. header processing and checksums), possible queueing if the network is busy, transmission delays associated with respect to bandwidth and packet size, and different propagation rates depending on the type of physical link being used (not always fibre, especially on the Aus side lol). 
 * delay to destinations are not constant but instead vary over time. One reason for this could be that your packet takes a different route from one day to the next. Furthermore, even if the route is the same, if there is a different number of users on the network (where the extremes i.e. just you vs more than the network is built to handle) then the RTT will change due to queueing times and possibly even packet dropping/resending as a result. 
