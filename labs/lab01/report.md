@@ -213,3 +213,15 @@ traceroute to 203.50.77.53 (203.50.77.53), 30 hops max, 60 byte packets
 * Both go through different paths in the two directions but there do appear to be common routers e.g. the unsw library ones and also 138.44.5.0/1 which appears in both paths. The last part of the IP addresses do appear to change though, and this is perhaps because slightly different interfaces are used for handling traffic going in a specific direction.
 
 # Question 4
+
+* Sydney -> Brisbane is ~730 km, T = 0.002433333, min round-trip (MRT) = 17.023, MRT/T = 6996
+* Sydney -> Manila is ~6200 km, T = 0.020666667, MRT = 318.391, MRT/T = 15406
+* Sydney -> Berlin is ~18,000 km, T = 0.06, MRT = 283.666, MRT/T = 4727
+
+GRAPH HERE
+* the reason the y values are much greater is because our T assumes the packet travels at the speed of light, never stopping for anything. This is obviously not how it works in reality as there are processing times (e.g. header processing and checksums), possible queueing if the network is busy, transmission delays associated with respect to bandwidth and packet size, and different propagation rates depending on the type of physical link being used (not always fibre, especially on the Aus side lol). 
+* delay to destinations are not constant but instead vary over time. One reason for this could be that your packet takes a different route from one day to the next. Furthermore, even if the route is the same, if there is a different number of users on the network (where the extremes i.e. just you vs more than the network is built to handle) then the RTT will change due to queueing times and possibly even packet dropping/resending as a result. 
+
+* www.epfl.ch appears to be hosted by cloudflare servers. These are a type of reverse proxy middle-man server that are designed to increase securty at a low overhead. They provide a cached version of the site. whois 104.20.229.42 suggests these cloudflare servers are in San Fran. but the real server could well be in Switzerland (and likely is because that's where epfl is).
+
+* the transmission delay is the only delay that is really effected by packet size (processing and copying into buffers for queinging would be minimal overheads even when packets are as large as the router supports). You can only fit as many bits as the link bandwidth supports onto the link at a time, meaning lower bandwidth and larger packets takes more time to send the whole packet (transmission delay). Once the bits are onto the link the propagation time is independant of the packet size.
