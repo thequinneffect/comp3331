@@ -59,8 +59,7 @@ traceroute to www.columbia.edu (128.59.105.24), 30 hops max, 60 byte packets
 23  ci.columbia.edu (128.59.105.24)  313.894 ms  313.016 ms  325.494 ms
 ~~~
 * the last one is the destination (www.columbia.edu (128.59.105.24)), so there are 22 routers between my machine and the destination server
-* the first 5 routers appear to be situated at unsw, whilst the aarnet routers 6-8 are in Kensington Perth
-* the packets cross the ocean between routers 9 (113.197.15.201) and 10 (207.231.240.8). router 9 is located in Perth, and router 10 in Seattle. A good hint is the word "sea" in "et-2-1-0.bdr1.a.sea.aarnet.net.au"
+* whois says that the first 5 routers are situated at unsw, whilst the aarnet routers 6-8 are in Kensington Perth. However, the latencies would seem to suggest that packets actually start crossing the ocean between routers 7 and 8 (significant increase in latency).
 
 ### Part 2
 
@@ -82,20 +81,7 @@ traceroute to www.ucla.edu (164.67.228.152), 30 hops max, 60 byte packets
 13  bd11f1.anderson--cr00f2.csb1.ucla.net (169.232.4.4)  163.108 ms bd11f1.anderson--cr001.anderson.ucla.net (169.232.4.6)  161.874 ms  162.081 ms
 14  cr00f1.anderson--dr00f2.csb1.ucla.net (169.232.4.55)  162.060 ms cr00f2.csb1--dr00f2.csb1.ucla.net (169.232.4.53)  161.205 ms cr00f1.anderson--dr00f2.csb1.ucla.net (169.232.4.55)  161.657 ms
 15  * * *
-16  * * *
-17  * * *
-18  * * *
-19  * * *
-20  * * *
-21  * * *
-22  * * *
-23  * * *
-24  * * *
-25  * * *
-26  * * *
-27  * * *
-28  * * *
-29  * * *
+...
 30  * * *
 ~~~
 
@@ -118,19 +104,7 @@ traceroute to www.u-tokyo.ac.jp (210.152.243.234), 30 hops max, 60 byte packets
 14  124.83.252.178 (124.83.252.178)  286.619 ms  295.013 ms  286.261 ms
 15  158.205.134.26 (158.205.134.26)  286.515 ms  300.119 ms  277.247 ms
 16  * * *
-17  * * *
-18  * * *
-19  * * *
-20  * * *
-21  * * *
-22  * * *
-23  * * *
-24  * * *
-25  * * *
-26  * * *
-27  * * *
-28  * * *
-29  * * *
+...
 30  * * *
 ~~~
 
