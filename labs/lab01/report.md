@@ -214,11 +214,12 @@ traceroute to 203.50.77.53 (203.50.77.53), 30 hops max, 60 byte packets
 
 # Question 4
 
-* Sydney -> Brisbane is ~730 km, T = 0.002433333, min round-trip (MRT) = 17.023, MRT/T = 6996
-* Sydney -> Manila is ~6200 km, T = 0.020666667, MRT = 318.391, MRT/T = 15406
-* Sydney -> Berlin is ~18,000 km, T = 0.06, MRT = 283.666, MRT/T = 4727
+* Sydney -> Brisbane is ~730 km, T = 0.002433333 sec = 2.433333 msec, min round-trip (MRT) = 17.023, MRT/T = 6.99
+* Sydney -> Manila is ~6200 km, T = 0.020666667 sec = 20.666667 msec, MRT = 318.391, MRT/T = 15.40
+* Sydney -> Berlin is ~18,000 km, T = 0.06 sec = 60 msec, MRT = 283.666, MRT/T = 4.72
 
-GRAPH HERE
+
+
 * the reason the y values are much greater is because our T assumes the packet travels at the speed of light, never stopping for anything. This is obviously not how it works in reality as there are processing times (e.g. header processing and checksums), possible queueing if the network is busy, transmission delays associated with respect to bandwidth and packet size, and different propagation rates depending on the type of physical link being used (not always fibre, especially on the Aus side lol). 
 * delay to destinations are not constant but instead vary over time. One reason for this could be that your packet takes a different route from one day to the next. Furthermore, even if the route is the same, if there is a different number of users on the network (where the extremes i.e. just you vs more than the network is built to handle) then the RTT will change due to queueing times and possibly even packet dropping/resending as a result. 
 
