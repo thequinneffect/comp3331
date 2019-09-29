@@ -131,4 +131,7 @@ traceroute to www.lancaster.ac.uk (148.88.65.80), 30 hops max, 60 byte packets
 18  www.lancs.ac.uk (148.88.65.80)  303.117 ms !X  303.060 ms !X  303.029 ms !X
 ~~~
 
+* Toyko diverges from the other two at router 4 (**A:** libcr1-te-4-5.gw.unsw.edu.au (149.171.255.89) VS **B:** ombcr1-te-4-5.gw.unsw.edu.au (149.171.255.77))
+* Lancaster and UCLA then diverge from each other at router 7 (**C:** et-2-0-5.bdr1.sing.sin.aarnet.net.au (113.197.15.233) VS **D:** et-1-3-0.pe1.sxt.bkvl.nsw.aarnet.net.au (113.197.15.149))
+
 # Question 4
