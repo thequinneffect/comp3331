@@ -33,6 +33,7 @@ Congratulations.  You've downloaded the file lab2-1.html!
 
 ### Question 4
 * status is "304", phrase is "Not Modified". 
+* no, the server did not re-send the contents because they were requested with a conditional get (made conditional by the If-Modified-Since and If-None-Match fields) and the contents hadn't been modified (so no reason to re-send the content).
 
 ### Question 5
 
