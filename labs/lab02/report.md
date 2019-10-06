@@ -11,13 +11,13 @@
 
 ### Question 4
 * 73 bytes of content are being returned by the HTTP server to the browser.
+
+### Question 5
 ~~~
 <html>\n
 Congratulations.  You've downloaded the file lab2-1.html!
 <html>\n
 ~~~
-
-### Question 5
 
 # Exercise 4
 
