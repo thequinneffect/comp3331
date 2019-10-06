@@ -36,5 +36,7 @@ Congratulations.  You've downloaded the file lab2-1.html!
 * no, the server did not re-send the contents because they were requested with a conditional get (made conditional by the If-Modified-Since and If-None-Match fields) and the contents hadn't been modified (so no reason to re-send the content).
 
 ### Question 5
+* the Entity tag (E-tag) fields value is "ETag: "1bfef-173-8f4ae900"". This is the same E-tag value as in the previous response. E-tags are like a fingerprint or hash of a specific version of a particular resource and can be compared to see whether two resources are the same. Servers use these to know whether they need to re-send the resource or not (just headers, no content). 
+
 
 # Exercise 5
