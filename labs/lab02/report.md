@@ -8,6 +8,7 @@
 ", which is the time that the message originated/was generated. 
 
 ### Question 3
+* it is persistent. This can be inferred by the "Connection: keep-alive" field that is present in BOTH the request and response.
 
 ### Question 4
 * 73 bytes of content are being returned by the HTTP server to the browser.
@@ -40,3 +41,4 @@ Congratulations.  You've downloaded the file lab2-1.html!
 
 
 # Exercise 5
+* see .py file, using python3
