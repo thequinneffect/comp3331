@@ -213,8 +213,11 @@ ns3.yahoo.com.		1800	IN	AAAA	2406:8600:f03f:1f8::1003
 * it is an MX query 
 
 ### Q10
+* wagner.cse.unsw.edu.au.	3600	IN	A	129.94.242.19
+* the amount of names in the dot.separate.name, + 1 for root (.) and then possibly +1 to get an uncached final answer. In my case it took me 6
 
 ### Q11
+* Yes, network cards are able to have multiple ip addresses associated with them. This is helpful for virtualising servers (i.e. more than one server on the one physical machine). Furthermore, you could argue that ipv4 and ipv6 is two for the one machine anyways without the above fact. It is of course possible to have multiple names for the same machine as well, either by adding multiple A type records for it, or by adding CNAMEs for existing A records. 
 
 # Exercise 4
 * using python3
