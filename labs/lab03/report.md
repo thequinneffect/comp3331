@@ -132,11 +132,85 @@ ns5.yahoo.com.		163281	IN	A	119.160.253.83
 ;; WHEN: Sun Oct 13 13:48:54 AEDT 2019
 ;; MSG SIZE  rcvd: 371
 ~~~
-
+* I'm assuming the response i got back did not come from one of the authoritative name servers listed, but instead the local (to cse) DNS cache server because of the instant query time;
+~~~
+;; Query time: 0 msec
+;; SERVER: 129.94.242.33#53(129.94.242.33)
+~~~
+* also, the flags do not contain "aa" which would indicate a authoritative response
 
 ### Q8
+* the query is refused both on my local machine and the cse machine. I'm assuming this is because they are authoritative for the web server provieded in q5 and NOT authoratative for these yahoo mail servers. 
+~~~
+dig @150.203.161.50 yahoo.com MX
+
+; <<>> DiG 9.11.3-1ubuntu1.8-Ubuntu <<>> @150.203.161.50 yahoo.com MX
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 65308
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: f5cd626f99fd019c613a2ca15da29b3d44e9d145e6232187 (good)
+;; QUESTION SECTION:
+;yahoo.com.			IN	MX
+
+;; Query time: 23 msec
+;; SERVER: 150.203.161.50#53(150.203.161.50)
+;; WHEN: Sun Oct 13 14:34:20 AEDT 2019
+;; MSG SIZE  rcvd: 66
+~~~
 
 ### Q9
+* first I obtained the authoritative NS for yahoo.com with "dig yahoo.com NS". This gave ns[1/2/3/4].yahoo.com.
+* then I just specified to use #4 for the look-up
+~~~
+dig @ns4.yahoo.com. yahoo.com MX
+
+; <<>> DiG 9.9.5-9+deb8u18-Debian <<>> @ns4.yahoo.com. yahoo.com MX
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 26893
+;; flags: qr aa rd; QUERY: 1, ANSWER: 3, AUTHORITY: 5, ADDITIONAL: 9
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1272
+;; QUESTION SECTION:
+;yahoo.com.			IN	MX
+
+;; ANSWER SECTION:
+yahoo.com.		1800	IN	MX	1 mta6.am0.yahoodns.net.
+yahoo.com.		1800	IN	MX	1 mta7.am0.yahoodns.net.
+yahoo.com.		1800	IN	MX	1 mta5.am0.yahoodns.net.
+
+;; AUTHORITY SECTION:
+yahoo.com.		172800	IN	NS	ns4.yahoo.com.
+yahoo.com.		172800	IN	NS	ns1.yahoo.com.
+yahoo.com.		172800	IN	NS	ns5.yahoo.com.
+yahoo.com.		172800	IN	NS	ns2.yahoo.com.
+yahoo.com.		172800	IN	NS	ns3.yahoo.com.
+
+;; ADDITIONAL SECTION:
+ns1.yahoo.com.		1209600	IN	A	68.180.131.16
+ns2.yahoo.com.		1209600	IN	A	68.142.255.16
+ns3.yahoo.com.		1800	IN	A	27.123.42.42
+ns4.yahoo.com.		1209600	IN	A	98.138.11.157
+ns5.yahoo.com.		1209600	IN	A	119.160.253.83
+ns1.yahoo.com.		86400	IN	AAAA	2001:4998:130::1001
+ns2.yahoo.com.		86400	IN	AAAA	2001:4998:140::1002
+ns3.yahoo.com.		1800	IN	AAAA	2406:8600:f03f:1f8::1003
+
+;; Query time: 197 msec
+;; SERVER: 98.138.11.157#53(98.138.11.157)
+;; WHEN: Sun Oct 13 14:41:13 AEDT 2019
+;; MSG SIZE  rcvd: 371
+~~~
+* it is an MX query 
 
 ### Q10
 
