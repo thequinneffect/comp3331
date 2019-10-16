@@ -1,0 +1,44 @@
+1
+{
+    a. processing
+    b. queueing
+    c. transmission
+    d. propagation
+}
+
+2
+{
+    a. 8 (connection and get, both per object (index and 3 pics)
+    b. 3 (connection, index, 3 images all at once)
+}
+
+3 
+{
+    d.
+    note: a is the definition of TTL for packet switching, not dns
+}
+
+4
+{
+    a true, tcp can make network layer appear reliable
+}
+
+5
+{
+    d.
+}
+
+section 2
+
+1
+{
+    20.02ms per link, so 5 * 20.02 = 100.1ms
+}
+
+2
+{
+    see pic
+    1 bit error will be detected (odd number of errors will always be)
+    2 bit error may go undetected (if same bit location is flipped in both)
+    - just think of addition 
+}
