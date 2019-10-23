@@ -5,3 +5,32 @@
 *On what port number is it sending and receiving TCP segments for this connection?* **80 (port reserved for HTTP)**
 
 *What is the IP address and TCP port number used by the client computer (source) that is transferring the file to gaia.cs.umass.edu?* **ip address 192.168.1.102, port 1161**
+
+# Q2
+
+*What is the sequence number of the TCP segment containing the HTTP POST command?* **232129013**
+
+# Q3
+
+| pkt | seq#      | sent @   | ACK recv'd @ | RTT      | EstRTT      |
+|-----|-----------|----------|--------------|----------|-------------|
+| 4   | 232129013 | 0.026477 | 0.053937     | 0.027460 | 0.027460    |
+| 5   | 232129578 | 0.041737 | 0.077294     | 0.035557 | 0.028472125 |
+| 7   | 232131038 | 0.054026 | 0.124085     | 0.070059 | 0.033670484 |
+| 8   | 232132498 | 0.054690 | 0.169118     | 0.114428 | 0.043765173 |
+| 10  | 232133958 | 0.077405 | 0.217299     | 0.139894 | 0.055781276 |
+| 11  | 232135418 | 0.078157 | 0.267802     | 0.189645 | 0.072514242 |
+
+EstRTT = (1-alpha) * EstRTT + (alpha * SampleRTT), where alpha = 0.125
+
+EstRTT(1) = SampleRTT(1) = 0.027460
+
+EstRTT(2) = (0.875 * 0.027460) + (0.125 * 0.035557) = 0.028472125
+
+EstRTT(3) = (0.875 * 0.028472125) + (0.125 * 0.070059) = 0.033670484
+
+EstRTT(4) = (0.875 * 0.033670484) + (0.125 * 0.114428) = 0.043765173
+
+EstRTT(5) = (0.875 * 0.043765173) + (0.125 * 0.139894) = 0.055781276
+
+EstRTT(6) = (0.875 * 0.055781276) + (0.125 * 0.189645) = 0.072514242
