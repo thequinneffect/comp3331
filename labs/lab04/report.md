@@ -41,8 +41,16 @@ EstRTT(6) = (0.875 * 0.055781276) + (0.125 * 0.189645) = 0.072514242
 
 see table in q3
 
-# q5
+# Q5
 
 *What is the minimum amount of available buffer space advertised at the receiver for the entire trace?* **"Statistics -> TCP stream graphs -> window scaling" shows the recevier window size is at its minimum at the start. This appears to be 5840 bytes, indicated by packet 2**
 
 *Does the lack of receiver buffer space ever throttle the sender?* **as the graph shows the windows size steadily increasing over duration, I do not beleive the window size is 0 at any stage, and hence there is always buffer space and the sender is not throttled (window size seems to always be greater than the segments)**
+
+# Q6
+
+*Are there any retransmitted segments in the trace file? What did you check for (in the trace) in order to answer this question?* **No, tcp.analysis.retransmission returns no results. I did start manually by checking the sequence numbers but there are way too many so I used the previous method (and also looked at both of the "Statistics -> TCP stream graphs -> Time Sequence" graphs which seem to always increase over time)
+
+# Q7
+
+Question 7. How much data does the receiver typically acknowledge in an ACK? Can you identify cases where the receiver is ACKing every other received segment (recall the discussion about delayed acks from the lecture notes or Section 3.5 of the text).
