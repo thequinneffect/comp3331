@@ -66,4 +66,7 @@ see table in q3
 *Can you identify cases where the receiver is ACKing every other received segment?* 
 **the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)**
 
-(recall the discussion about delayed acks from the lecture notes or Section 3.5 of the text).
+# Q8
+
+*What is the throughput (bytes transferred per unit time) for the TCP connection (explain how you calculated this value)?
+**the last ACK value is 164091 (relative), meaning approximately 164000 bytes were transferred. This took 7.59 seconds approx according to the timestamp of the last packet. Hence the throughput it approximately 164000/7.6 = 21,578 bytes/sec, and hence 21kb/sec**
