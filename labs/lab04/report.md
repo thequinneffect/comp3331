@@ -36,3 +36,13 @@ EstRTT(4) = (0.875 * 0.033670484) + (0.125 * 0.114428) = 0.043765173
 EstRTT(5) = (0.875 * 0.043765173) + (0.125 * 0.139894) = 0.055781276
 
 EstRTT(6) = (0.875 * 0.055781276) + (0.125 * 0.189645) = 0.072514242
+
+# Q4
+
+see table in q3
+
+# q5
+
+*What is the minimum amount of available buffer space advertised at the receiver for the entire trace?* **"Statistics -> TCP stream graphs -> window scaling" shows the recevier window size is at its minimum at the start. This appears to be 5840 bytes, indicated by packet 2**
+
+*Does the lack of receiver buffer space ever throttle the sender?* **as the graph shows the windows size steadily increasing over duration, I do not beleive the window size is 0 at any stage, and hence there is always buffer space and the sender is not throttled (window size seems to always be greater than the segments)**
