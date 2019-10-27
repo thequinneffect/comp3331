@@ -53,7 +53,7 @@ see table in q3
 
 # Q7
 
-*How much data does the receiver typically acknowledge in an ACK? **typically 1460. I found this out by turning relative sequence numbers back on, and then starting from packet 9 added 1460 to the ACK number and this almost always derived the next ACK number (I knew to add 1460 because that's the average payload size and was always the result from doing packet10acknum - packet9acknum before turning relative numbers back on)** 
+*How much data does the receiver typically acknowledge in an ACK?* **typically 1460. I found this out by turning relative sequence numbers back on, and then starting from packet 9 added 1460 to the ACK number and this almost always derived the next ACK number (I knew to add 1460 because that's the average payload size and was always the result from doing packet10acknum - packet9acknum before turning relative numbers back on)** 
 
 *Can you identify cases where the receiver is ACKing every other received segment?* **the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)
 
