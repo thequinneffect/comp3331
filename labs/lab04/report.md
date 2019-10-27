@@ -56,7 +56,7 @@ see table in q3
 # Q6
 
 *Are there any retransmitted segments in the trace file? What did you check for (in the trace) in order to answer this question?* 
-**No, tcp.analysis.retransmission returns no results. I did start manually by checking the sequence numbers but there are way too many so I used the previous method (and also looked at both of the "Statistics -> TCP stream graphs -> Time Sequence" graphs which seem to always increase over time)
+**No, tcp.analysis.retransmission returns no results. I did start manually by checking the sequence numbers but there are way too many so I used the previous method (and also looked at both of the "Statistics -> TCP stream graphs -> Time Sequence" graphs which seem to always increase over time)**
 
 # Q7
 
@@ -64,6 +64,6 @@ see table in q3
 **typically 1460. I found this out by turning relative sequence numbers back on, and then starting from packet 9 added 1460 to the ACK number and this almost always derived the next ACK number (I knew to add 1460 because that's the average payload size and was always the result from doing packet10acknum - packet9acknum before turning relative numbers back on)** 
 
 *Can you identify cases where the receiver is ACKing every other received segment?* 
-**the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)
+**the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)**
 
 (recall the discussion about delayed acks from the lecture notes or Section 3.5 of the text).
