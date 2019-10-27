@@ -78,30 +78,39 @@ PART 2
 # Q1
 
 *What is the sequence number of the TCP SYN segment that is used to initiate the TCP connection between the client computer and server?*
-**hello**
+**2818463618**
 
 # Q2
 
 *What is the sequence number of the SYNACK segment sent by the server to the client computer in reply to the SYN?*
+**1247095790**
 
-*What is the value of the Acknowledgement field in the SYNACK segment?* 
+*What is the value of the Acknowledgement field in the SYNACK segment?*
+**2818463619**
 
 *How did the server determine that value?*
+**2818463618+1 because it consumed the 1 byte that is used in the 3 way handshake. It is acknowledging that it got that byte and so now asking the next one(s)**
 
 # Q3
 
-*What is the sequence number of the ACK segment sent by the client computer in response to the SYNACK? 
+*What is the sequence number of the ACK segment sent by the client computer in response to the SYNACK?
+**2818463619**
 
 *What is the value of the Acknowledgment field in this ACK segment?*
+**1247095791**
 
 *Does this segment contain any data?*
+**no, the next packet that is sent by the client has the same seq#, meaning no bytes were sent in this one**
 
 # Q4
 
-*Who has done the active close? client or the server? how you have determined this? 
+*Who has done the active close? client or the server? how you have determined this?
+**both the server and client initiate the close independantly, thus they are both doing active close. This is evident by the ACK number on the servers FIN (second FIN to occur) being the same as the seq# of the clients FIN (first fin) i.e. at the time of the server doing it's FIN it has not seen the client FIN, despite it having already occured**
 
 *What type of closure has been performed? 3 Segment (FIN/FINACK/ACK), 4 Segment (FIN/ACK/FIN/ACK) or Simultaneous close?*
+**simultaneous, because they both active close, they each ACK the close of one another and it's done**
 
 # Q5
 
 *How many data bytes have been transferred from the client to the server and from the server to the client during the whole duration of the connection? What relationship does this have with the Initial Sequence Number and the final ACK received from the other side?*
+**As the sequence numbers are essentially a byte counter for "sent" (but starting at some random offset i.e. ISN) and ACK#'s are essentially byte counters for "delivered", the last ACK# - the first seq# gives you the total amount of bytes successfully sent over the connection. Hence the client to server bytes was  2818463653 - 2818463618 = 35 bytes and the server to client bytes was 1247095832 - 1247095790 = 42 bytes**
