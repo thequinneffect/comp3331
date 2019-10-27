@@ -1,14 +1,18 @@
 # Q1
 
-*What is the IP address of gaia.cs.umass.edu?* **128.119.245.12**
+*What is the IP address of gaia.cs.umass.edu?* 
+**128.119.245.12**
 
-*On what port number is it sending and receiving TCP segments for this connection?* **80 (port reserved for HTTP)**
+*On what port number is it sending and receiving TCP segments for this connection?* 
+**80 (port reserved for HTTP)**
 
-*What is the IP address and TCP port number used by the client computer (source) that is transferring the file to gaia.cs.umass.edu?* **ip address 192.168.1.102, port 1161**
+*What is the IP address and TCP port number used by the client computer (source) that is transferring the file to gaia.cs.umass.edu?* 
+**ip address 192.168.1.102, port 1161**
 
 # Q2
 
-*What is the sequence number of the TCP segment containing the HTTP POST command?* **232129013**
+*What is the sequence number of the TCP segment containing the HTTP POST command?* 
+**232129013**
 
 # Q3
 
@@ -43,18 +47,23 @@ see table in q3
 
 # Q5
 
-*What is the minimum amount of available buffer space advertised at the receiver for the entire trace?* **"Statistics -> TCP stream graphs -> window scaling" shows the recevier window size is at its minimum at the start. This appears to be 5840 bytes, indicated by packet 2**
+*What is the minimum amount of available buffer space advertised at the receiver for the entire trace?* 
+**"Statistics -> TCP stream graphs -> window scaling" shows the recevier window size is at its minimum at the start. This appears to be 5840 bytes, indicated by packet 2**
 
-*Does the lack of receiver buffer space ever throttle the sender?* **as the graph shows the windows size steadily increasing over duration, I do not beleive the window size is 0 at any stage, and hence there is always buffer space and the sender is not throttled (window size seems to always be greater than the segments)**
+*Does the lack of receiver buffer space ever throttle the sender?* 
+**as the graph shows the windows size steadily increasing over duration, I do not beleive the window size is 0 at any stage, and hence there is always buffer space and the sender is not throttled (window size seems to always be greater than the segments)**
 
 # Q6
 
-*Are there any retransmitted segments in the trace file? What did you check for (in the trace) in order to answer this question?* **No, tcp.analysis.retransmission returns no results. I did start manually by checking the sequence numbers but there are way too many so I used the previous method (and also looked at both of the "Statistics -> TCP stream graphs -> Time Sequence" graphs which seem to always increase over time)
+*Are there any retransmitted segments in the trace file? What did you check for (in the trace) in order to answer this question?* 
+**No, tcp.analysis.retransmission returns no results. I did start manually by checking the sequence numbers but there are way too many so I used the previous method (and also looked at both of the "Statistics -> TCP stream graphs -> Time Sequence" graphs which seem to always increase over time)
 
 # Q7
 
-*How much data does the receiver typically acknowledge in an ACK?* **typically 1460. I found this out by turning relative sequence numbers back on, and then starting from packet 9 added 1460 to the ACK number and this almost always derived the next ACK number (I knew to add 1460 because that's the average payload size and was always the result from doing packet10acknum - packet9acknum before turning relative numbers back on)** 
+*How much data does the receiver typically acknowledge in an ACK?* 
+**typically 1460. I found this out by turning relative sequence numbers back on, and then starting from packet 9 added 1460 to the ACK number and this almost always derived the next ACK number (I knew to add 1460 because that's the average payload size and was always the result from doing packet10acknum - packet9acknum before turning relative numbers back on)** 
 
-*Can you identify cases where the receiver is ACKing every other received segment?* **the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)
+*Can you identify cases where the receiver is ACKing every other received segment?* 
+**the receiver seems to wait longer than usual between ACK's at packet 191 and 198, and this results in the ack at packet 198 ackowledging 2920 bytes (instead of the usual 1460, and it is no cooincidence that 2920 = 2 * 1460, i.e. it ACK'd every other packet in this occasion)
 
 (recall the discussion about delayed acks from the lecture notes or Section 3.5 of the text).
