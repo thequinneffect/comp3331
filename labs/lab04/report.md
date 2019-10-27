@@ -1,3 +1,5 @@
+PART 1
+
 # Q1
 
 *What is the IP address of gaia.cs.umass.edu?* 
@@ -70,3 +72,36 @@ see table in q3
 
 *What is the throughput (bytes transferred per unit time) for the TCP connection (explain how you calculated this value)?
 **the last ACK value is 164091 (relative), meaning 164000 bytes were transferred (minus 1 to account for the 1 ACK consumed in the 3 way handshake). This took 5.45 - 0.02 = 5.43 seconds i.e. time of last data packet minus time of first data packet not including handshake setup and disconnect packets. Hence the throughput was approximately 164000/5.43 = 30,202.57 bytes/sec or ~30kb/s**
+
+PART 2
+
+# Q1
+
+*What is the sequence number of the TCP SYN segment that is used to initiate the TCP connection between the client computer and server?*
+**hello**
+
+# Q2
+
+*What is the sequence number of the SYNACK segment sent by the server to the client computer in reply to the SYN?*
+
+*What is the value of the Acknowledgement field in the SYNACK segment?* 
+
+*How did the server determine that value?*
+
+# Q3
+
+*What is the sequence number of the ACK segment sent by the client computer in response to the SYNACK? 
+
+*What is the value of the Acknowledgment field in this ACK segment?*
+
+*Does this segment contain any data?*
+
+# Q4
+
+*Who has done the active close? client or the server? how you have determined this? 
+
+*What type of closure has been performed? 3 Segment (FIN/FINACK/ACK), 4 Segment (FIN/ACK/FIN/ACK) or Simultaneous close?*
+
+# Q5
+
+*How many data bytes have been transferred from the client to the server and from the server to the client during the whole duration of the connection? What relationship does this have with the Initial Sequence Number and the final ACK received from the other side?*
