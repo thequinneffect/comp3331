@@ -69,4 +69,4 @@ see table in q3
 # Q8
 
 *What is the throughput (bytes transferred per unit time) for the TCP connection (explain how you calculated this value)?
-**the last ACK value is 164091 (relative), meaning approximately 164000 bytes were transferred. This took 7.59 seconds approx according to the timestamp of the last packet. Hence the throughput it approximately 164000/7.6 = 21,578 bytes/sec, and hence 21kb/sec**
+**the last ACK value is 164091 (relative), meaning 164000 bytes were transferred (minus 1 to account for the 1 ACK consumed in the 3 way handshake). This took 5.45 - 0.02 = 5.43 seconds i.e. time of last data packet minus time of first data packet not including handshake setup and disconnect packets. Hence the throughput was approximately 164000/5.43 = 30,202.57 bytes/sec or ~30kb/s**
