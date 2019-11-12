@@ -8,8 +8,8 @@
 #include <arpa/inet.h>
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
+    
     int sock_fd, client_fd; // the fd we will use to interact with our socket (everything is a file - linux) (same for client)
     struct sockaddr_in server, client; // the structs that contain information about identifying our server and client (ip address and port numbers)
 
