@@ -1,0 +1,44 @@
+PROTOCOL {
+    - maybe set up a bunch of struct for casting the data to?
+    - i.e. always a 1 word command, and then the paramters follow after that
+
+    e.g. 
+    AUTH\r\n
+    quinn\r\n
+    y33tb1x\r\n
+    \r\n
+
+    and then handle it with a struct that has
+}
+
+FUNCTIONALITIES {
+
+    - 1 thread per client on the server
+    - call different functions depending on what the request word is
+
+    AUTH {
+        - the server accepts the clients connection request, then spawns a new thread for the client and calls
+        the client loop
+        - client loop calls the auth function (Waiting for data from client)
+        - client sends AUTH request with username and password i.e.
+        AUTH\n
+        yods\n
+        greenman123\n
+        - server checks if this is a valid user, whether or not they are already logged in etc.
+        - if everything is valid, log them in (i.e. allocate them what's necessary, update book-keepings etc.)
+            - respond with OK
+        - if incorrect, respond with !OK, update login fail count for this username, wait for next attempt
+        - if 3 failed attempts, block user for the required time (set blockedUntil field)
+
+        - probably need a struct for each online user that has info on it e.g. username, password, isBlocked, blockTime
+        - store this in memory, probably won't be that many users
+    }
+
+    TIMEOUT {
+        - for each client, start a timer after their latest activity
+        - whenever they do a new activity, reset the timer
+        - if the timer interrupt ever happens, log the user out (they are inactive)
+
+    }
+
+}
