@@ -16,3 +16,8 @@ if __name__ == '__main__':
     functionA()
     functionB()
 print("after __name__ guard")
+
+a = [1, 3, 5]
+b = a
+a[:] = [x + 2 for x in a]
+print(b)

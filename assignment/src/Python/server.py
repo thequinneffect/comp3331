@@ -4,54 +4,59 @@ import sys
 from socket import *
 import threading
 
+import time # only needed for testing atm
+
 MIN_ARGS = 4
 MAX_PORT_NO = 65535
 BUFSIZ = 512
 MAX_LOGIN_ATTEMPTS = 3
 
-
-
-# command pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
-class Commands():
+# request pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
+class Requests():
 
     # given a username and password, either logs in if valid and return true
     # or doesn't and returns false
-    def command_AUTH(self, args):
-        print(f"running the AUTH command on server with arg={args}")
+    def request_AUTH(self, args):
+        print(f"running the AUTH request on server with arg={args}")
         username = args[0]
         password = args[1]
         if username not in client_creds:
-            return False
+            respond_with(["NOUSER"])
+            
         if client_creds[username] != password:
             return False
+        # valid, so also set up p2p stuff here
+        
         return True
 
     def run(self, req):
         keyword = req.split("\n")[0]
         req = req.split("\n")[1:]
-        command = getattr(self, "command_"+keyword, None)
-        if command is not None:
-            return command(req)
+        request = getattr(self, "request_"+keyword, None)
+        if request is not None:
+            return request(req)
+
+requestHandler = Requests()
 
 def new_client_handler(ip, port, sock):
     print(f"new client handler made for client: {ip}:{port}")
 
     if not authenticate(sock):
-        exit(1)
+        print("client not authenticated, update book-keeping and destroy thread")
     print("client was authenticated, going into service loop")
     while True:
         req = sock.recv(BUFSIZ).decode("utf-8")
-        print(req)
+        requestHandler.run(req)
 
 def authenticate(sock):
 
-    commands = Commands()
     authenticated = False
     tryCount = 1
     while not authenticated:
+        print("in auth loop")
         # expecting client to send credentials
         req = sock.recv(BUFSIZ).decode("utf-8")
-        authenticated = commands.run(req)
+        authenticated = requestHandler.run(req)
         if not authenticated:
             response = generate_response(["NOTOK", "Try again"])
             tryCount += 1
@@ -61,13 +66,20 @@ def authenticate(sock):
             break
         if authenticated:
             response = generate_response(["OK", "Welcome to the server!"])
+        print(f"before send: auth is {authenticated}")
         sock.send(response.encode())
+        print(f"after send: auth is {authenticated}")
+    return authenticated
         
 def generate_response(lines):
+    lines[:] = [str(line) for line in lines]
     response = '\n'.join(lines)
     print(f"response is:\n{response}")
     return response
 
+def respond_with(lines):
+    response = generate_response(lines)
+    serverSocket.send(response.encode())
 
 if len(sys.argv) < MIN_ARGS:
     print(f"usage error: python3 {sys.argv[0]} <server_port> <block_duration> <timeout>")
@@ -108,60 +120,9 @@ print("TCP Server now listening!")
 while 1:
 
     # create a socket specifically for the client that has just requested a connection
-    connectionSocket, addr = serverSocket.accept()
-    clientArgs = [addr[0], addr[1], connectionSocket]
+    clientSocket, addr = serverSocket.accept()
+    clientArgs = [addr[0], addr[1], clientSocket]
 
     clientThread = threading.Thread(name="clientThread", target=new_client_handler, args=clientArgs)
     clientThread.daemon=True
     clientThread.start()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    '''
-    # wait whilst trying to receive data from the client on its dedicated connection socket
-    client_sentence = connectionSocket.recv(1024)
-
-    client_sentence = client_sentence.decode("utf-8")
-
-    new_user, new_pass = client_sentence.split(" ")
-    print(f"new user is: {new_user}, new pass is: {new_pass}")
-
-    if new_user in clients and clients[new_user] == new_pass:
-        reply = "OK"
-    else:
-        reply = "!OK"
-
-    #reply = str.encode(client_sentence.upper())
-    print(f"replying with: {reply}")
-    reply = str.encode(reply, "utf-8")
-    connectionSocket.send(reply)
-
-    connectionSocket.close()
-    '''
