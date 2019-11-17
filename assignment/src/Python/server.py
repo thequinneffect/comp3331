@@ -11,6 +11,22 @@ MAX_PORT_NO = 65535
 BUFSIZ = 512
 MAX_LOGIN_ATTEMPTS = 3
 
+class Client():
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+        self.clientSocket = None
+        self.peeringInfo = None
+        self.isBlocked = False
+        self.isOnline = True
+        #self.loginTime = None
+        #self.Timer # not sure if this goes here or is an object or not, but represents the per user time that is set after each command
+        #self.offlineMessages = [] # append to this when they aren't online
+        #self.blockedClients = [] # can do if username in blockedClients to check i.e. only stores username of blocked client, not struct
+
+clients = {}
+
 # request pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
 class Requests():
 
@@ -22,11 +38,12 @@ class Requests():
         password = args[1]
         if username not in client_creds:
             respond_with(["NOUSER"])
-            
         if client_creds[username] != password:
-            return False
-        # valid, so also set up p2p stuff here
-        
+            # decrement tries left for this client
+            # if client.tries left is 0
+                # respond with logout and block
+            respond_with(["NOTOK", "Try again"])
+        # valid, so login and setup info
         return True
 
     def run(self, req):
@@ -38,38 +55,57 @@ class Requests():
 
 requestHandler = Requests()
 
-def new_client_handler(ip, port, sock):
+def new_client_handler(ip, port, clientSocket):
     print(f"new client handler made for client: {ip}:{port}")
 
-    if not authenticate(sock):
-        print("client not authenticated, update book-keeping and destroy thread")
-    print("client was authenticated, going into service loop")
+    isAuthenticated = authenticate(clientSocket)
+    if not isAuthenticated:
+        print("TODO: implement clean up here")
+        exit()
+
     while True:
         req = sock.recv(BUFSIZ).decode("utf-8")
         requestHandler.run(req)
 
-def authenticate(sock):
+def authenticate(clientSocket):
 
     authenticated = False
-    tryCount = 1
+    triesLeft = 3
     while not authenticated:
         print("in auth loop")
-        # expecting client to send credentials
-        req = sock.recv(BUFSIZ).decode("utf-8")
-        authenticated = requestHandler.run(req)
-        if not authenticated:
-            response = generate_response(["NOTOK", "Try again"])
-            tryCount += 1
-        if tryCount > MAX_LOGIN_ATTEMPTS:
-            response = generate_response(["LOGOUT"])
-            sock.send(response.encode())
-            break
-        if authenticated:
-            response = generate_response(["OK", "Welcome to the server!"])
-        print(f"before send: auth is {authenticated}")
-        sock.send(response.encode())
-        print(f"after send: auth is {authenticated}")
-    return authenticated
+        # protocol expects client to send credentials now
+        req = clientSocket.recv(BUFSIZ).decode("utf-8")
+        username = req[1]
+        password = req[2]
+        peerIP = req[3]
+        peerPort = req[4]
+        print(f"details for authenticating are: {username} {password} {peerIP} {peerPort}")
+
+        # check if the user exists
+        if username not in client_creds:
+            respond_with(["BADUSER", "Please enter a valid username."])
+        # user exists, so now check if already online or blocked
+        client = clients[username]
+        # cannot be blocked and online, so check blocked first
+        if client.isBlocked:
+            respond_with(["BADUSER", "Account is currently blocked."])
+        elif client.isOnline:
+            respond_with(["BADUSER", "Account is already logged in."])
+        # eligible for login, so check the password is correct
+        elif client.password != password:
+            triesLeft -= 1
+            if triesLeft <= 0:
+                client.isBlocked = True
+                respond_with(["LOGOUT", "Invalid Password. Your account has been blocked. Please try again later"])
+            else:
+                respond_with(["NOTOK", "Invalid Password. Please try again"])
+        # valid, so login configure current host information
+        else:
+            client.clientSocket = clientSocket
+            client.peerIP = peerIP
+            client.peerPort = peerPort
+            respond_with(["OK", "Welcome to the server."])
+            authenticated = True
         
 def generate_response(lines):
     lines[:] = [str(line) for line in lines]
@@ -79,17 +115,22 @@ def generate_response(lines):
 
 def respond_with(lines):
     response = generate_response(lines)
-    serverSocket.send(response.encode())
+    clientSocket.send(response.encode())
 
+##############################
+#           main()           #
+##############################
+
+# ensure enough command line arguments were passed 
 if len(sys.argv) < MIN_ARGS:
     print(f"usage error: python3 {sys.argv[0]} <server_port> <block_duration> <timeout>")
     exit(1)
 
+# extracr command line arguments
 serverPort = int(sys.argv[1])
 if serverPort not in range(1, MAX_PORT_NO+1):
     print(f"usage error: port number {serverPort} is invalid")
     exit(1)
-
 blockDuration = int(sys.argv[2])
 timeoutTimer = int(sys.argv[3])
 
@@ -101,26 +142,27 @@ for cred in credentials:
     #print(f"{username},{len(username)}")
     #print(f"{password},{len(password)}")
     client_creds[username] = password
+    clients[username] = Client(username, password)
 
 for username in client_creds:
     print(f"username: {username}, password: {client_creds[username]}")
 
-# use ipv4 and tcp
-serverSocket = socket(AF_INET, SOCK_STREAM)
+# setup the server welcoming socket with ipv4 and tcp
+welcomeSocket = socket(AF_INET, SOCK_STREAM)
 # make able to reuse port even if it is in the time wait state
-serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+welcomeSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
 # this server is listening on this machine at port 12000
-serverSocket.bind(('localhost', serverPort))
+welcomeSocket.bind(('localhost', serverPort))
 
 # listen and only refuse max once
-serverSocket.listen(1)
+welcomeSocket.listen(1)
 print("TCP Server now listening!")
 
 while 1:
 
     # create a socket specifically for the client that has just requested a connection
-    clientSocket, addr = serverSocket.accept()
+    clientSocket, addr = welcomeSocket.accept()
     clientArgs = [addr[0], addr[1], clientSocket]
 
     clientThread = threading.Thread(name="clientThread", target=new_client_handler, args=clientArgs)

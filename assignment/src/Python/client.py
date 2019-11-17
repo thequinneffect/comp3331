@@ -13,20 +13,24 @@ class Responses():
     # given a username and password, either logs in if valid and return true
     # or doesn't and returns false
     def response_OK(self, args):
-        print("running response handler for OK response")
-        print(args[0])
+        for string in args:
+            print(string)
         return True
     
     def response_NOTOK(self, args):
-        print("running response handler for NOTOKAY response")
-        print(args[0])
+        for string in args:
+            print(string)
         return False
 
-    def reponse_NOUSER(self, args):
-        print("Invalid username. Please enter a valid username.")
+    def reponse_BADUSER(self, args):
+        for string in args:
+            print(string)
+        # restart the login process
         login()
 
     def response_LOGOUT(self, args):
+        for string in args:
+            print(string)
         exit(1)
 
     def run(self, response):
@@ -87,7 +91,9 @@ def generate_command(lines):
     #print(f"command is:\n{command}")
     return command
 
-# START #
+##############################
+#           main()           #
+##############################
 
 # ensure command-line arguments were entered
 if len(sys.argv) < MIN_ARGS:
@@ -116,7 +122,7 @@ peerIP, peerPort = peerSocket.getsockname()
 # authenticate with the server
 login()
 # configure details before entering service loop e.g. P2P info
-init()
+#init()
 
 # create a receiving/response handling thread
 recvThread = threading.Thread(name="clientThread", target=response_receiver)

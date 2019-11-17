@@ -69,6 +69,11 @@ FUNCTIONALITIES {
 
         - probably need a struct for each online user that has info on it e.g. username, password, isBlocked, blockTime
         - store this in memory, probably won't be that many users
+
+
+        1. client types in username and password then sends to server
+        2. server first must check if username is valid AND that username is not already logged in
+        3. 
     }
 
     TIMEOUT {
