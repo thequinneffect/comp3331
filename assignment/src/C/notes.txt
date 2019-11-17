@@ -9,14 +9,50 @@ PROTOCOL {
     \r\n
 
     and then handle it with a struct that has
+
+    response OK - operation succeeded, and here is the data if any was needed {
+        - has the field OK so the OK handler can be run
+        - then has a series of lines with \n termination
+        - this allows you to generate a list of lines
+        - then you can just do for line in lines and print them
+    } response NOTOK is basically the same but means the operation failed
+
+    response LOGOUT {
+        - sent to a client by the server and causes the client to exit()
+        - also store the reason for logout in a line of text e.g. LOGOUT\ntimeout for inactivity\n
+        - client needs to do cleanup before exiting i.e. send STPPRVT's to all the p2p connections it has
+    }
 }
+
+
+class Server():
+    def __init__(self, sock, block, timout)
+        self.welcomeSock = sock
+        self.blockTime = block
+        self.timeoutTime = block
+
+class Client():
+
+    def __init__(self, server, peer, user, pass)
+        self.server = sock // set to None when the client logs out? 
+        self.peeringInfo = peer 
+        self.username = user
+        self.password = password
+        self.consecFails = 0
+        self.isBlocked = False
+        self.isOnline = True
+        self.loginTime = 
+        self.Timer // not sure if this goes here or is an object or not, but represents the per user time that is set after each command
+        self.offlineMessages = [] // append to this when they aren't online
+        self.blockedClients = [] // can do if username in blockedClients to check i.e. only stores username of blocked client, not struct
+
 
 FUNCTIONALITIES {
 
     - 1 thread per client on the server
     - call different functions depending on what the request word is
 
-    AUTH {
+    AUTH aka login {
         - the server accepts the clients connection request, then spawns a new thread for the client and calls
         the client loop
         - client loop calls the auth function (Waiting for data from client)
@@ -24,9 +60,10 @@ FUNCTIONALITIES {
         AUTH\n
         yods\n
         greenman123\n
+        - client.py generates the username: and password: prompts, no need for server to send it
         - server checks if this is a valid user, whether or not they are already logged in etc.
-        - if everything is valid, log them in (i.e. allocate them what's necessary, update book-keepings etc.)
-            - respond with OK
+        - if everything is valid (CASE SENSITIVE), log them in (i.e. allocate them what's necessary, update book-keepings etc.)
+            - respond with OK and attach welcome message and any offline messages
         - if incorrect, respond with !OK, update login fail count for this username, wait for next attempt
         - if 3 failed attempts, block user for the required time (set blockedUntil field)
 
@@ -35,10 +72,74 @@ FUNCTIONALITIES {
     }
 
     TIMEOUT {
-        - for each client, start a timer after their latest activity
+        - for each client, start a timer after their latest activity (including logging in)
         - whenever they do a new activity, reset the timer
         - if the timer interrupt ever happens, log the user out (they are inactive)
+        - because it is only reset on CLIENT activity, reset it in the receive loop of the server
+            - i.e. when you handle a request, reset the timer for the client that you are currently handling the request for
 
     }
 
+    presence notification (not command based) {
+        - when someone logs in/logs out, loop through the clients list and send the appropriate message to all clients 
+        who have the isOnline field set to True. (maybe this could be socket based and don't need the isOnline variable?
+        e.g. if Client.connectionSock is not None then send msg)
+        - also need to check the blocked list
+    }
+
+    WHO command, list online users {
+        - client sends LIST request to server, response with OK and list of username password lines for online clients
+    }
+
+    WHOSINCE {
+        - same as WHO, but uses loginTime as well
+    }
+
+    MSG request {
+        - client sends MSG request with target client name and message
+        - if the target is invalid, send NOTOK and reason why "Error. Invalid user"
+        - if the target is valid but offline, store on the target clients offline messages list
+        - if the targest is valid and online, send them the message
+        - can probably hijack the OK command for this as well (or the NOTOK command in the case that A has blocked B)
+    }
+
+    BRDCST {
+        - same as MSG but no user specified and don't store in offline messages
+        i.e. loop through clients and for each online client, send the msg, else do nothing
+        - not informed about logins or logouts either
+    }
+
+    STRTPRVT {
+        - client sends this command and the second line is the target client
+        - the server looks up the clients p2p information and so long as valid (target exists and hasn't blocked requester)
+        then you send the client this information in a PEER response (basically the ip and port number)
+            - PEER response basically set up the tcp connection and then prints out the success message (hard coded on client side, doesnt need to be sent)
+        - the peer response then initiates the tcp connection to the target client!
+        - if something was invalid, send a NOTOK response with the appropriate message (blocked, offline, invalid username, own username)
+    }
+
+    PRVTMSG (p2p req) {
+        - second field is the target client
+        - check clients local list of clients to which it has an open p2p connection with for the target client name
+        - if it doesnt have one then tell client to do the start private command first
+        - if it does then make sure the socket is still alive (probs can be done with a try catch block)
+            - remove from p2p list and show appropriate error msg if socket is dead
+        - can still send to a client who has blocked you so long as you strprvt'd them before the block
+    }
+
+    STPPRVT {
+        - client sends this command and the second line is the target client
+        - if connection to the target client doesn't exist then print error message (check local p2p list)
+        - reception function for STPPRVT prints out message saying connection is dead (can hard code to client)
+    }
 }
+
+// maybe try and make modules for client server and p2p reusable
+// use the same logic for both, try code so that peer to peer part only requires calling existing code
+
+from Responses import ClientServer
+
+Responses.ClientServer.someResponse
+
+from Responses import PeerToPeer
+Responses.PeerToPeer

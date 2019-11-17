@@ -71,3 +71,13 @@ client_loop()
 
 clientSocket.close()
 #and close the socket
+
+
+# TODO:
+"""
+    - 1 thread for sending to server (typing input and sending requests), 1 thread for receiving from server (servicing responses),
+    and another thread for p2p (or another 2 threads for peer to peer, peer sending and peer receiving?) 
+        - you have just 1 extra socket (actually a new port but whatever) for the peer to peer, but one (or maybe need two) new threads
+        per peer that joins
+        - If using Python, check socket.bind((' ', 0)). needed for getting unique client port num for each new client
+"""
