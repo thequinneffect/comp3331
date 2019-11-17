@@ -10,8 +10,6 @@ BUFSIZ = 512
 
 class Responses():
 
-    # given a username and password, either logs in if valid and return true
-    # or doesn't and returns false
     def response_OK(self, args):
         for string in args:
             print(string)
@@ -22,11 +20,11 @@ class Responses():
             print(string)
         return False
 
-    def reponse_BADUSER(self, args):
+    def response_BADUSER(self, args):
         for string in args:
             print(string)
-        # restart the login process
         login()
+        return True
 
     def response_LOGOUT(self, args):
         for string in args:
@@ -58,7 +56,7 @@ requests = {
 
 def request_sender():
     while True:
-        request = input()
+        request = input("> ")
         words = request.split(" ")
         requestFunc = requests.get(words[0])
         if requestFunc is None:
@@ -72,17 +70,11 @@ def login():
     username = input("username: ")
     while not authenticated:
         password = input("password: ")
-        command = generate_command(["AUTH", username, password, peerIP, peerPort])
+        command = generate_command([username, password, peerIP, peerPort])
         serverSocket.send(command.encode())
         response = serverSocket.recv(BUFSIZ).decode("utf-8")
         authenticated = responseHandler.run(response)
-
-# configure details like peering information
-# allows server to do setup before considering client "online"
-def init():
-    print("peering information being sent!")
-    request = generate_command(["INIT", peerIP, peerPort])
-    serverSocket.send(request.encode())
+        print(f"result of trying to auth(T/F)={authenticated}")
         
 def generate_command(lines):
     # make sure all list elements are strings
@@ -121,11 +113,9 @@ peerIP, peerPort = peerSocket.getsockname()
 
 # authenticate with the server
 login()
-# configure details before entering service loop e.g. P2P info
-#init()
 
 # create a receiving/response handling thread
-recvThread = threading.Thread(name="clientThread", target=response_receiver)
+recvThread = threading.Thread(name="recvThread", target=response_receiver)
 recvThread.daemon=True
 recvThread.start()
 
@@ -134,8 +124,6 @@ sendThread = threading.Thread(name="sendThread", target=request_sender)
 sendThread.daemon=True
 sendThread.start()
 
-#serverSocket.close()
-#and close the socket
 while True:
     time.sleep(0.1)
 
