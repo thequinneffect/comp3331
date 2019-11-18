@@ -1,23 +1,38 @@
 # Suppose this is foo.py.
 
-print("before import")
-import math
+class SomeClass():
+    def __init__(self, num):
+        self.num = num
 
-print("before functionA")
-def functionA():
-    print("Function A")
+aClass = SomeClass(1)
+bClass = SomeClass(2)
+cClass = SomeClass(3)
 
-print("before functionB")
-def functionB():
-    print("Function B {}".format(math.sqrt(100)))
+originalDict = {
+    "a" : aClass,
+    "b" : bClass,
+    "c" : cClass
+}
 
-print("before __name__ guard")
-if __name__ == '__main__':
-    functionA()
-    functionB()
-print("after __name__ guard")
+print(originalDict)
+for key in originalDict:
+    print(originalDict[key].num)
 
-a = [1, 3, 5]
-b = a
-a[:] = [x + 2 for x in a]
-print(b)
+originalDict["a2"] = aClass
+
+print(originalDict)
+for key in originalDict:
+    print(originalDict[key].num)
+
+originalDict["a2"].num = 2
+
+print(originalDict)
+for key in originalDict:
+    print(originalDict[key].num)
+
+print(originalDict["a"] == originalDict["a2"])
+print(originalDict["a"] == originalDict["b"])
+print(originalDict["b"] == originalDict["a2"])
+
+print(originalDict["a"].num == originalDict["b"].num)
+print(originalDict["b"].num == originalDict["a2"].num)

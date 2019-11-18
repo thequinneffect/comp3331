@@ -3,6 +3,7 @@
 import sys
 from socket import *
 import threading
+import datetime
 
 import time # only needed for testing atm
 
@@ -11,17 +12,21 @@ MAX_PORT_NO = 65535
 BUFSIZ = 512
 MAX_LOGIN_ATTEMPTS = 3
 
+threadLock = threading.Condition()
+
 class Client():
 
     def __init__(self, username, password):
         self.username = username
         self.password = password
         self.clientSocket = None
-        self.peeringInfo = None
+        self.peerIP = None
+        self.peerPort = None
         self.isBlocked = False
+        self.blockTime = None
         self.isOnline = False
         self.triesLeft = 3
-        #self.loginTime = None
+        self.loginTime = None
         #self.Timer # not sure if this goes here or is an object or not, but represents the per user time that is set after each command
         #self.offlineMessages = [] # append to this when they aren't online
         #self.blockedClients = [] # can do if username in blockedClients to check i.e. only stores username of blocked client, not struct
@@ -33,56 +38,86 @@ class Requests():
 
     # given a username and password, either logs in if valid and return true
     # or doesn't and returns false
-    def request_AUTH(self, args):
+    def request_AUTH(self, clientSocket, args):
         print(f"running the AUTH request on server with arg={args}")
         username = args[0]
         password = args[1]
+        peerIP = args[2]
+        peerPort = args[3]
         # check if the user exists
         if username not in client_creds:
-            respond_with(["BADUSER", "Please enter a valid username."])
+            respond_with(clientSocket, ["BADUSER", "Please enter a valid username."])
             return False
         # user exists, so now check if already online or blocked
         client = clients[username]
+        # unblock if blocktime has elapsed
+        currentTime = time.time()
+        if client.isBlocked and currentTime - client.blockTime >= blockDuration:
+            client.isBlocked = False
         # cannot be blocked and online, so check blocked first
         if client.isBlocked:
-            respond_with(["BADUSER", "Account is currently blocked."])
+            respond_with(clientSocket, ["BADUSER", "Account is currently blocked."])
             return False
         elif client.isOnline:
-            respond_with(["BADUSER", "Account is already logged in."])
+            respond_with(clientSocket, ["BADUSER", "Account is already logged in."])
             return False
         # eligible for login, so check the password is correct
         elif client.password != password:
             client.triesLeft -= 1
             if client.triesLeft <= 0:
                 client.isBlocked = True
-                respond_with(["LOGOUT", "Invalid Password. Your account has been blocked. Please try again later"])
+                client.blockTime = time.time()
+                respond_with(clientSocket, ["LOGOUT", "Invalid password. Your account has been blocked. Please try again later"])
             else:
-                respond_with(["NOTOK", "Invalid Password. Please try again"])
+                respond_with(clientSocket, ["NOTOK", "Invalid password. Please try again"])
             return False
-        # valid, so login
+        # valid, so login and setup client information
         else:
-            respond_with(["OK", "Welcome to the server."])
+            respond_with(clientSocket, ["OK", "Welcome to the server."])
             client.triesLeft = 3
+            client.clientSocket = clientSocket
+            client.isOnline = True
+            # also set up the peering info before the client enters servicing loop and is deemed online
+            client.peerIP = peerIP
+            client.peerPort = peerPort
+            client.loginTime = time.time()
+            client.timer = threading.Timer(timeoutTime, handle_timeout, args=[client.clientSocket])
+            client.timer.start()
             return True
 
-    def run(self, req):
+    def request_LOGOUT(self, clientSocket, args):
+        print(f"got a logout request on socket {clientSocket}")
+        # TODO: do any cleanup needed with client structure
+        respond_with(clientSocket, ["LOGOUT", "You have been logged out of the server."])
+
+    def run(self, clientSocket, req):
         keyword = req.split("\n")[0]
         req = req.split("\n")[1:]
         request = getattr(self, "request_"+keyword, None)
         if request is not None:
-            return request(req)
+            return request(clientSocket, req)
+        else:
+            print("Error: ill-formatted request from server")
+            
 
 requestHandler = Requests()
 
+def handle_timeout(clientSocket):
+    respond_with(clientSocket, ["LOGOUT", "You have been logged out due to inactivity."])
+
 def new_client_handler(ip, port, clientSocket):
-    print(f"new client handler made for client: {ip}:{port}")
+    print(f"new client handler made for client: {ip}:{port} with socket {clientSocket}")
 
     print("going into servicing loop...")
     while True:
         print("about to recv")
         request = clientSocket.recv(BUFSIZ).decode("utf-8")
+        print(request)
+        # if the client socket has closed, then close this thread
+        if len(request) == 0:
+            sys.exit() # TODO: replace with function that cleans up the exited clients struct
         print("about to run")
-        requestHandler.run(request)
+        requestHandler.run(clientSocket, request)
         
 def generate_response(lines):
     lines[:] = [str(line) for line in lines]
@@ -90,7 +125,7 @@ def generate_response(lines):
     print(f"response is:\n{response}")
     return response
 
-def respond_with(lines):
+def respond_with(clientSocket, lines):
     response = generate_response(lines)
     clientSocket.send(response.encode())
 
@@ -103,13 +138,13 @@ if len(sys.argv) < MIN_ARGS:
     print(f"usage error: python3 {sys.argv[0]} <server_port> <block_duration> <timeout>")
     exit(1)
 
-# extracr command line arguments
+# extract command line arguments
 serverPort = int(sys.argv[1])
 if serverPort not in range(1, MAX_PORT_NO+1):
     print(f"usage error: port number {serverPort} is invalid")
     exit(1)
 blockDuration = int(sys.argv[2])
-timeoutTimer = int(sys.argv[3])
+timeoutTime = int(sys.argv[3])
 
 client_creds = {}
 credentials = open("./credentials.txt","r")

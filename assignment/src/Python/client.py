@@ -1,5 +1,5 @@
 #coding: utf-8
-import sys
+import sys, os
 from socket import *
 import threading
 import time
@@ -7,6 +7,15 @@ import time
 MIN_ARGS = 3
 MAX_PORT_NO = 65535
 BUFSIZ = 512
+
+# a simple struct for holding client information
+class ClientInformation():
+    def __init__(self):
+        self.username = None
+        self.password = None
+        self.peerIP = None
+        self.peerPort = None
+clientInfo = ClientInformation()
 
 class Responses():
 
@@ -26,19 +35,18 @@ class Responses():
     def response_BADUSER(self, args):
         for string in args:
             print(string)
-        username = input("username: ")
-        password = input("password: ")
-        request_with(["AUTH", username, password])
+        clientInfo.username = input("username: ")
+        clientInfo.password = input("password: ")
+        request_with(["AUTH", clientInfo.username, clientInfo.password])
         return False
 
     def reponse_BADPASS(self, args):
-        password = input("password: ")
-        request_with(["AUTH", username, password])
+        print("might not need this")
 
     def response_LOGOUT(self, args):
         for string in args:
             print(string)
-        exit(1)
+        os._exit(0)
 
     def run(self, response):
         keyword = response.split("\n")[0]
@@ -55,65 +63,83 @@ def recv_responses():
     print("being handled by recv in response handler")
     responseHandler.run(response)
 
+def request_message(request):
+    print(f"running request message with string = {request}")
 
-def request_message(words):
-    print(f"running request msg with words = {words}")
+def request_logout(request):
+    print(f"running request logout with string {request}")
+    request_with(["LOGOUT"])
 
 requests = {
-    "msg" : request_message
+    "message" : request_message,
+    "logout" : request_logout
 }
 
 def send_requests():
 
     while True:
-        request = input("> ")
-        words = request.split(" ")
-        requestFunc = requests.get(words[0])
-        if requestFunc is None:
-            print("Error: unknown command")
+        request = input()
+        if len(request.split(" ")) > 2:
+            keyword, request = request.split(" ", 1)
         else:
-            requestFunc(words[1:])
+            keyword = request
+        request_handler = requests.get(keyword)
+        if request_handler is None:
+            print("Error: unknown request")
+        else:
+            request_handler(request)
 
 def login():
     authenticated = False
-    username = input("username: ")
-    password = input("password: ")
-    command = generate_command(["AUTH", username, password])
-    serverSocket.send(command.encode())
+    clientInfo.username = input("username: ")
+    clientInfo.password = input("password: ")
+    request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
     while not authenticated:
-        response = serverSocket.recv(BUFSIZ).decode("utf-8")
-        response = response.split("\n")
-        keyword = response[0]
-        for string in response[1:]:
+        keyword, response = unpack_response(serverSocket.recv(BUFSIZ))
+        for string in response:
             print(string)
-
         if keyword == "BADUSER":
-            username = input("password: ")
-            serverSocket.send(generate_command(["AUTH", username, password]).encode())
-
-        authenticated = responseHandler.run(response)
+            clientInfo.username = input("username: ")
+            clientInfo.password = input("password: ")
+            request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
+        elif keyword == "LOGOUT":
+            # handle logout, for now just exit
+            exit(1)
+        elif keyword == "NOTOK":
+            clientInfo.password = input("password: ")
+            request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
+        elif keyword == "OK":
+            authenticated = True
+        else:
+            print("Uh-oh! Looks like something went wrong!")
         
-def generate_command(lines):
+def generate_request(lines):
     # make sure all list elements are strings
     lines[:] = [str(line) for line in lines]
-    command = '\n'.join(lines)
-    #print(f"command is:\n{command}")
-    return command
+    request = '\n'.join(lines)
+    #print(f"request is:\n{request}")
+    return request
 
 def request_with(lines):
-    lines = generate_command(lines)
+    lines = generate_request(lines)
     serverSocket.send(lines.encode())
+
+def unpack_response(response):
+    response = response.decode("utf-8")
+    response = response.split("\n")
+    keyword = response[0]
+    return keyword, response[1:]
 
 ##############################
 #           main()           #
 ##############################
 
-# ensure command-line arguments were entered
+# ensure request-line arguments were entered
 if len(sys.argv) < MIN_ARGS:
     print(f"usage error: python3 {sys.argv[0]} <server_ip> <server_port>")
     exit(1)
 
-# extract command line arguments
+# extract request line arguments
 serverIP = sys.argv[1]
 serverPort = int(sys.argv[2])
 if serverPort not in range(1, MAX_PORT_NO+1):
@@ -130,7 +156,7 @@ peerSocket = socket(AF_INET, SOCK_STREAM)
 # bind to port #0 to let OS pick a currently unused port (ensure clients have different port)
 
 peerSocket.bind((gethostbyname(gethostname()), 0))
-peerIP, peerPort = peerSocket.getsockname()
+clientInfo.peerIP, clientInfo.peerPort = peerSocket.getsockname()
 
 # authenticate with the server
 login()
