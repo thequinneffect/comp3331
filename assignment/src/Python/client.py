@@ -10,21 +10,30 @@ BUFSIZ = 512
 
 class Responses():
 
+    # generic success message with 0..* strings, returns True if needed
     def response_OK(self, args):
         for string in args:
             print(string)
         return True
     
+    # generic failure message with 0..* strings, returns False if needed
     def response_NOTOK(self, args):
         for string in args:
             print(string)
         return False
 
+    # server rejected username, so get a new one (+ password)
     def response_BADUSER(self, args):
         for string in args:
             print(string)
-        login()
-        return True
+        username = input("username: ")
+        password = input("password: ")
+        request_with(["AUTH", username, password])
+        return False
+
+    def reponse_BADPASS(self, args):
+        password = input("password: ")
+        request_with(["AUTH", username, password])
 
     def response_LOGOUT(self, args):
         for string in args:
@@ -41,7 +50,7 @@ class Responses():
 # create a single instance of this class for the sending/requesting thread to use
 responseHandler = Responses()
 
-def response_receiver():
+def recv_responses():
     response = serverSocket.recv(BUFSIZ).decode("utf-8")
     print("being handled by recv in response handler")
     responseHandler.run(response)
@@ -54,7 +63,8 @@ requests = {
     "msg" : request_message
 }
 
-def request_sender():
+def send_requests():
+
     while True:
         request = input("> ")
         words = request.split(" ")
@@ -64,17 +74,24 @@ def request_sender():
         else:
             requestFunc(words[1:])
 
-
 def login():
     authenticated = False
     username = input("username: ")
+    password = input("password: ")
+    command = generate_command(["AUTH", username, password])
+    serverSocket.send(command.encode())
     while not authenticated:
-        password = input("password: ")
-        command = generate_command([username, password, peerIP, peerPort])
-        serverSocket.send(command.encode())
         response = serverSocket.recv(BUFSIZ).decode("utf-8")
+        response = response.split("\n")
+        keyword = response[0]
+        for string in response[1:]:
+            print(string)
+
+        if keyword == "BADUSER":
+            username = input("password: ")
+            serverSocket.send(generate_command(["AUTH", username, password]).encode())
+
         authenticated = responseHandler.run(response)
-        print(f"result of trying to auth(T/F)={authenticated}")
         
 def generate_command(lines):
     # make sure all list elements are strings
@@ -82,6 +99,10 @@ def generate_command(lines):
     command = '\n'.join(lines)
     #print(f"command is:\n{command}")
     return command
+
+def request_with(lines):
+    lines = generate_command(lines)
+    serverSocket.send(lines.encode())
 
 ##############################
 #           main()           #
@@ -115,12 +136,12 @@ peerIP, peerPort = peerSocket.getsockname()
 login()
 
 # create a receiving/response handling thread
-recvThread = threading.Thread(name="recvThread", target=response_receiver)
+recvThread = threading.Thread(name="recvThread", target=recv_responses)
 recvThread.daemon=True
 recvThread.start()
 
 # and also create an input/request sending thread
-sendThread = threading.Thread(name="sendThread", target=request_sender)
+sendThread = threading.Thread(name="sendThread", target=send_requests)
 sendThread.daemon=True
 sendThread.start()
 

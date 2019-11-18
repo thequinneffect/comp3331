@@ -20,6 +20,7 @@ class Client():
         self.peeringInfo = None
         self.isBlocked = False
         self.isOnline = False
+        self.triesLeft = 3
         #self.loginTime = None
         #self.Timer # not sure if this goes here or is an object or not, but represents the per user time that is set after each command
         #self.offlineMessages = [] # append to this when they aren't online
@@ -36,15 +37,33 @@ class Requests():
         print(f"running the AUTH request on server with arg={args}")
         username = args[0]
         password = args[1]
+        # check if the user exists
         if username not in client_creds:
-            respond_with(["NOUSER"])
-        if client_creds[username] != password:
-            # decrement tries left for this client
-            # if client.tries left is 0
-                # respond with logout and block
-            respond_with(["NOTOK", "Try again"])
-        # valid, so login and setup info
-        return True
+            respond_with(["BADUSER", "Please enter a valid username."])
+            return False
+        # user exists, so now check if already online or blocked
+        client = clients[username]
+        # cannot be blocked and online, so check blocked first
+        if client.isBlocked:
+            respond_with(["BADUSER", "Account is currently blocked."])
+            return False
+        elif client.isOnline:
+            respond_with(["BADUSER", "Account is already logged in."])
+            return False
+        # eligible for login, so check the password is correct
+        elif client.password != password:
+            client.triesLeft -= 1
+            if client.triesLeft <= 0:
+                client.isBlocked = True
+                respond_with(["LOGOUT", "Invalid Password. Your account has been blocked. Please try again later"])
+            else:
+                respond_with(["NOTOK", "Invalid Password. Please try again"])
+            return False
+        # valid, so login
+        else:
+            respond_with(["OK", "Welcome to the server."])
+            client.triesLeft = 3
+            return True
 
     def run(self, req):
         keyword = req.split("\n")[0]
@@ -58,61 +77,12 @@ requestHandler = Requests()
 def new_client_handler(ip, port, clientSocket):
     print(f"new client handler made for client: {ip}:{port}")
 
-    isAuthenticated = authenticate(clientSocket)
-    if not isAuthenticated:
-        print("TODO: implement clean up here")
-        time.sleep(0.1)
-
     print("going into servicing loop...")
     while True:
-        time.sleep(0.1)
-        print("service service ...")
-
-def authenticate(clientSocket):
-    triesLeft = 3
-    while True:
-        print(f"attempting aithentication with {triesLeft} tries left")
-        # protocol expects client to send credentials now
-        req = clientSocket.recv(BUFSIZ).decode("utf-8")
-        req = req.split("\n")
-        username = req[0]
-        password = req[1]
-        peerIP = req[2]
-        peerPort = req[3]
-        print(f"details for authenticating are: {username} {password} {peerIP} {peerPort}")
-
-        # check if the user exists
-        if username not in client_creds:
-            respond_with(["BADUSER", "Please enter a valid username."])
-            # cannot decrement tries or block non-existant user, so demand valid username
-            # and reset the number of tries
-            triesLeft = 3
-            continue
-        # user exists, so now check if already online or blocked
-        client = clients[username]
-        # cannot be blocked and online, so check blocked first
-        if client.isBlocked:
-            respond_with(["BADUSER", "Account is currently blocked."])
-            return False
-        elif client.isOnline:
-            respond_with(["BADUSER", "Account is already logged in."])
-            return False
-        # eligible for login, so check the password is correct
-        elif client.password != password:
-            triesLeft -= 1
-            if triesLeft <= 0:
-                client.isBlocked = True
-                respond_with(["LOGOUT", "Invalid Password. Your account has been blocked. Please try again later"])
-                return False
-            else:
-                respond_with(["NOTOK", "Invalid Password. Please try again"])
-        # valid, so login configure current host information
-        else:
-            client.clientSocket = clientSocket
-            client.peerIP = peerIP
-            client.peerPort = peerPort
-            respond_with(["OK", "Welcome to the server."])
-            return True
+        print("about to recv")
+        request = clientSocket.recv(BUFSIZ).decode("utf-8")
+        print("about to run")
+        requestHandler.run(request)
         
 def generate_response(lines):
     lines[:] = [str(line) for line in lines]
