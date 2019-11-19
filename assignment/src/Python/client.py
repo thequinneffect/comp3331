@@ -21,6 +21,7 @@ class Responses():
 
     # generic success message with 0..* strings, returns True if needed
     def response_OK(self, args):
+        print(f"running response OK in client with args {args}")
         for string in args:
             print(string)
         return True
@@ -37,7 +38,7 @@ class Responses():
             print(string)
         clientInfo.username = input("username: ")
         clientInfo.password = input("password: ")
-        request_with(["AUTH", clientInfo.username, clientInfo.password])
+        request_with([clientInfo.username, clientInfo.password])
         return False
 
     def reponse_BADPASS(self, args):
@@ -59,18 +60,60 @@ class Responses():
 responseHandler = Responses()
 
 def recv_responses():
-    response = serverSocket.recv(BUFSIZ).decode("utf-8")
-    print("being handled by recv in response handler")
-    responseHandler.run(response)
+    while True:
+        response = serverSocket.recv(BUFSIZ).decode("utf-8")
+        print("being handled by recv in response handler")
+        responseHandler.run(response)
 
-def request_message(request):
-    print(f"running request message with string = {request}")
+def request_whoelse(data):
+    #print(f"running request whoelse with string = {request}")
+    request_with(["WHOELSE"])
 
-def request_logout(request):
-    print(f"running request logout with string {request}")
+def request_whoelsesince(data):
+    print(f"running request whoelse with string = {data}")
+    if data is None:
+        print("Error. No duration specified.")
+        return
+    request_with(["WHOELSESINCE", data])
+
+def request_block(data):
+    print(f"running request block with string = {data}")
+    if data is None:
+        print("Error. No user specified.")
+        return
+    request_with(["BLOCK", data])
+
+def request_unblock(data):
+    print(f"running request unblock with string = {data}")
+    if data is None:
+        print("Error. No user specified.")
+        return
+    request_with(["UNBLOCK", data])
+
+def request_broadcast(data):
+    print(f"running request message with string = {data}")
+    if data is None:
+        print("Error. No message specified.")
+        return
+    request_with(["BROADCAST", data])
+
+def request_message(data):
+    print(f"running request message with string = {data}")
+    if data is None:
+        print("Error. No message specified.")
+        return
+    request_with(["MESSAGE", data])
+
+def request_logout(data):
+    #print(f"running request logout with string {request}")
     request_with(["LOGOUT"])
 
 requests = {
+    "whoelse" : request_whoelse,
+    "whoelsesince" : request_whoelsesince,
+    "block" : request_block,
+    "unblock" : request_unblock,
+    "broadcast" : request_broadcast,
     "message" : request_message,
     "logout" : request_logout
 }
@@ -79,21 +122,23 @@ def send_requests():
 
     while True:
         request = input()
-        if len(request.split(" ")) > 2:
-            keyword, request = request.split(" ", 1)
+        if len(request.split(" ")) > 1:
+            keyword, data = request.split(" ", 1)
         else:
             keyword = request
+            data = None
+        print(f"keyword in client is: {keyword}, data is {data}")
         request_handler = requests.get(keyword)
         if request_handler is None:
-            print("Error: unknown request")
+            print("Error. Unknown request")
         else:
-            request_handler(request)
+            request_handler(data)
 
 def login():
     authenticated = False
     clientInfo.username = input("username: ")
     clientInfo.password = input("password: ")
-    request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
+    request_with([clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
     while not authenticated:
         keyword, response = unpack_response(serverSocket.recv(BUFSIZ))
         for string in response:
@@ -101,13 +146,13 @@ def login():
         if keyword == "BADUSER":
             clientInfo.username = input("username: ")
             clientInfo.password = input("password: ")
-            request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
+            request_with([clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
         elif keyword == "LOGOUT":
             # handle logout, for now just exit
             exit(1)
         elif keyword == "NOTOK":
             clientInfo.password = input("password: ")
-            request_with(["AUTH", clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
+            request_with([clientInfo.username, clientInfo.password, clientInfo.peerIP, clientInfo.peerPort])
         elif keyword == "OK":
             authenticated = True
         else:

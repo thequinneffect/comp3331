@@ -27,27 +27,137 @@ class Client():
         self.isOnline = False
         self.triesLeft = 3
         self.loginTime = None
-        #self.Timer # not sure if this goes here or is an object or not, but represents the per user time that is set after each command
-        #self.offlineMessages = [] # append to this when they aren't online
-        #self.blockedClients = [] # can do if username in blockedClients to check i.e. only stores username of blocked client, not struct
+        self.logoutTime = None
+        self.timer = None
+        self.offlineMessages = [] # stores the messages as strings
+        self.blockedClients = [] # stores username strings, not client structs
+    def setLogoutInfo(self):
+        self.cilentSocket = None
+        self.isOnline = False
+        self.timer.cancel()
+        self.timer = None
+        self.logoutTime = time.time()
 
 clients = {}
 
 # request pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
 class Requests():
 
-    # given a username and password, either logs in if valid and return true
-    # or doesn't and returns false
-    def request_AUTH(self, clientSocket, args):
-        print(f"running the AUTH request on server with arg={args}")
+    def request_WHOELSE(self, client, args):
+        print(f"got a whoelse request from {client.username} with args {args}")
+        otherClients = ["OK"] # responding with OK
+        for username in clients:
+            otherClient = clients[username]
+            if otherClient is not client and otherClient.isOnline:
+                otherClients.append(otherClient.username)
+        if len(otherClients) == 1:
+            otherClients.append("Nobody else is online.")
+        respond_with(client.clientSocket, otherClients) # prepended with an "OK" response keyword
+
+    def request_WHOELSESINCE(self, client, args):
+        print(f"got a whoelsesince request from {client.username} with args {args}")
+        sinceTime = int(args[0])
+        timeAgo = time.time() - sinceTime
+        otherClients = ["OK"] # responding with OK
+        for username in clients:
+            if username == client.username:
+                continue
+            otherClient = clients[username]
+            if otherClient.isOnline or (otherClient.logoutTime is not None and otherClient.logoutTime > timeAgo):
+                otherClients.append(otherClient.username)
+        if len(otherClients) == 1:
+            otherClients.append(f"Nobody else has been online for {sinceTime} seconds.")
+        respond_with(client.clientSocket, otherClients)
+
+    def request_BLOCK(self, client, args):
+        print(f"got a block request from {client.username} with args {args}")
         username = args[0]
-        password = args[1]
-        peerIP = args[2]
-        peerPort = args[3]
+        if username not in client_creds:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot block {username} as they do not exist."])
+        elif username == client.username:
+            respond_with(client.clientSocket, ["NOTOK", "You cannot block yourself."])
+        elif username in client.blockedClients:
+            respond_with(client.clientSocket, ["NOTOK", f"You have already blocked {username}."])
+        else:
+            client.blockedClients.append(username)
+            respond_with(client.clientSocket, ["OK", f"You have successfully blocked {username}."])
+
+    def request_UNBLOCK(self, client, args):
+        print(f"got a unblock request from {client.username} with args {args}")
+        username = args[0]
+        if username not in client_creds:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot unblock {username} as they do not exist."])
+        elif username == client.username:
+            respond_with(client.clientSocket, ["NOTOK", "You cannot unblock yourself."])
+        elif username not in client.blockedClients:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot unblock {username} as you have not blocked them."])
+        else:
+            client.blockedClients.remove(username)
+            respond_with(client.clientSocket, ["OK", f"You have successfully unblocked {username}."])
+
+    def request_BROADCAST(self, client, args):
+        print(f"got a broadcast request from {client.username} with args {args}")
+        message = args[0]
+        someUndelivered = False
+        for username in clients:
+            otherClient = clients[username]
+            if otherClient.username == client.username or not otherClient.isOnline:
+                continue
+            elif client.username in otherClient.blockedClients:
+                someUndelivered = True
+            else:
+                respond_with(otherClient.clientSocket, ["OK", message])
+        if someUndelivered:
+            respond_with(client.clientSocket, ["NOTOK", "Your message could not be delivered to some users."])
+
+    def request_MESSAGE(self, client, args):
+        print(f"got a message request from {client.username} with args {args}")
+        username, message = args.split(" ", 1)
+        if username not in client_creds:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot message {username} as they do not exist."])
+        elif username == client.username:
+            respond_with(client.clientSocket, ["NOTOK", "You cannot message yourself."])
+        elif client.username in clients[username].blockedClients:
+            respond_with(client.clientSocket, ["NOTOK", f"You have been blocked by {username}."])
+        else:
+            respond_with(clients[username].clientSocket, ["OK", message])
+
+    def request_LOGOUT(self, client, args):
+        print(f"got a logout request from {client.username}")
+        # TODO: do any cleanup needed with client structure
+        logout(client, "You have been logged out of the server.")
+
+    def run(self, client, req):
+        keyword = req.split("\n")[0]
+        req = req.split("\n")[1:]
+        request = getattr(self, "request_"+keyword, None)
+        if request is not None:
+            return request(client, req)
+        else:
+            print("Error: ill-formatted request from server")
+            
+
+requestHandler = Requests()
+
+def start_timer(client):
+    client.timer = threading.Timer(timeoutTime, logout, args=[client, "You have been logged out due to inactivity."])
+    client.timer.start()
+
+def authenticate(clientSocket):
+    authenticated = False
+    while not authenticated:
+        print("attempting authentication")
+        # receive and unpack authentication information
+        request = clientSocket.recv(BUFSIZ).decode("utf-8").split("\n")
+        print(f"got auth info {request}")
+        username = request[0]
+        password = request[1]
+        peerIP = request[2]
+        peerPort = request[3]
         # check if the user exists
         if username not in client_creds:
             respond_with(clientSocket, ["BADUSER", "Please enter a valid username."])
-            return False
+            continue
         # user exists, so now check if already online or blocked
         client = clients[username]
         # unblock if blocktime has elapsed
@@ -57,20 +167,18 @@ class Requests():
         # cannot be blocked and online, so check blocked first
         if client.isBlocked:
             respond_with(clientSocket, ["BADUSER", "Account is currently blocked."])
-            return False
         elif client.isOnline:
             respond_with(clientSocket, ["BADUSER", "Account is already logged in."])
-            return False
         # eligible for login, so check the password is correct
         elif client.password != password:
             client.triesLeft -= 1
             if client.triesLeft <= 0:
                 client.isBlocked = True
                 client.blockTime = time.time()
-                respond_with(clientSocket, ["LOGOUT", "Invalid password. Your account has been blocked. Please try again later"])
+                logout(client, "Invalid password. Your account has been blocked. Please try again later")
+                return None
             else:
                 respond_with(clientSocket, ["NOTOK", "Invalid password. Please try again"])
-            return False
         # valid, so login and setup client information
         else:
             respond_with(clientSocket, ["OK", "Welcome to the server."])
@@ -81,43 +189,43 @@ class Requests():
             client.peerIP = peerIP
             client.peerPort = peerPort
             client.loginTime = time.time()
-            client.timer = threading.Timer(timeoutTime, handle_timeout, args=[client.clientSocket])
-            client.timer.start()
-            return True
+            start_timer(client)
+            return client
 
-    def request_LOGOUT(self, clientSocket, args):
-        print(f"got a logout request on socket {clientSocket}")
-        # TODO: do any cleanup needed with client structure
-        respond_with(clientSocket, ["LOGOUT", "You have been logged out of the server."])
-
-    def run(self, clientSocket, req):
-        keyword = req.split("\n")[0]
-        req = req.split("\n")[1:]
-        request = getattr(self, "request_"+keyword, None)
-        if request is not None:
-            return request(clientSocket, req)
-        else:
-            print("Error: ill-formatted request from server")
-            
-
-requestHandler = Requests()
-
-def handle_timeout(clientSocket):
-    respond_with(clientSocket, ["LOGOUT", "You have been logged out due to inactivity."])
+def logout(client, string):
+    print("logging out {client.username} with string {string}")
+    client.setLogoutInfo()
+    respond_with(client.clientSocket, ["LOGOUT", string])
 
 def new_client_handler(ip, port, clientSocket):
     print(f"new client handler made for client: {ip}:{port} with socket {clientSocket}")
 
+    # authenticate and return client info
+    client = authenticate(clientSocket)
+    if client is None: # auth failed, so close this thread
+        sys.exit(0)
+
+    # TODO: retrieve any offline messages before going in to service loop
+
     print("going into servicing loop...")
     while True:
         print("about to recv")
-        request = clientSocket.recv(BUFSIZ).decode("utf-8")
-        print(request)
-        # if the client socket has closed, then close this thread
-        if len(request) == 0:
-            sys.exit() # TODO: replace with function that cleans up the exited clients struct
-        print("about to run")
-        requestHandler.run(clientSocket, request)
+        try:
+            request = clientSocket.recv(BUFSIZ).decode("utf-8")
+            print(request)
+            # if the client socket has closed, then close this thread
+            if len(request) == 0:
+                print("request len was 0")
+                client.setLogoutInfo()
+                sys.exit(0) # TODO: replace with function that cleans up the exited clients struct
+            print("about to run")
+            # got a request from the client, so restart the timeout timer
+            client.timer.cancel()
+            start_timer(client)
+            requestHandler.run(client, request)
+        except error:
+            # socket is dead, meaning client closed the connection, so exit this client thread
+            sys.exit(0)
         
 def generate_response(lines):
     lines[:] = [str(line) for line in lines]
