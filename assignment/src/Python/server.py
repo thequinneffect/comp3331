@@ -31,12 +31,29 @@ class Client():
         self.timer = None
         self.offlineMessages = [] # stores the messages as strings
         self.blockedClients = [] # stores username strings, not client structs
+
     def setLogoutInfo(self):
         self.cilentSocket = None
         self.isOnline = False
-        self.timer.cancel()
-        self.timer = None
+        if self.timer is not None:
+            self.timer.cancel()
+            self.timer = None
         self.logoutTime = time.time()
+
+    def showPresence(self, logDirection):
+        for username in clients:
+            if username == self.username:
+                continue
+            otherClient = clients[username]
+            if not otherClient.isOnline:
+                continue
+            if otherClient.username not in self.blockedClients:
+                respond_with(otherClient.clientSocket, ["OK", f"{self.username} has logged {logDirection}."])
+
+    def showOfflineMessages(self):
+        for message in self.offlineMessages:
+            respond_with(self.clientSocket, ["OK", message])
+        self.offlineMessages.clear()
 
 clients = {}
 
@@ -97,7 +114,7 @@ class Requests():
 
     def request_BROADCAST(self, client, args):
         print(f"got a broadcast request from {client.username} with args {args}")
-        message = args[0]
+        message = client.username + ": " + args[0]
         someUndelivered = False
         for username in clients:
             otherClient = clients[username]
@@ -112,15 +129,36 @@ class Requests():
 
     def request_MESSAGE(self, client, args):
         print(f"got a message request from {client.username} with args {args}")
-        username, message = args.split(" ", 1)
+        username = args[0]
+        message = client.username + ": " + args[1]
         if username not in client_creds:
             respond_with(client.clientSocket, ["NOTOK", f"You cannot message {username} as they do not exist."])
-        elif username == client.username:
+            return
+        otherClient = clients[username]
+        if otherClient.username == client.username:
             respond_with(client.clientSocket, ["NOTOK", "You cannot message yourself."])
-        elif client.username in clients[username].blockedClients:
-            respond_with(client.clientSocket, ["NOTOK", f"You have been blocked by {username}."])
+        elif client.username in otherClient.blockedClients:
+            respond_with(client.clientSocket, ["NOTOK", f"You have been blocked by {otherClient.username}."])
+        elif not otherClient.isOnline:
+            otherClient.offlineMessages.append(message)
         else:
-            respond_with(clients[username].clientSocket, ["OK", message])
+            respond_with(otherClient.clientSocket, ["OK", message])
+
+    def request_STARTPRIVATE(self, client, args):
+        print(f"got a startprivate request from {client.username} with {args}")
+        username = args[0]
+        if username not in client_creds:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot start a private connection with {username} as they do not exist."])
+            return
+        otherClient = clients[username]
+        if otherClient.username == client.username:
+            respond_with(client.clientSocket, ["NOTOK", "You cannot start a private connection with yourself."])
+        elif not otherClient.isOnline:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot start a private connection with {username} as they are offline."])
+        elif client.username in otherClient.blockedClients:
+            respond_with(client.clientSocket, ["NOTOK", f"You cannot start a private connection with {username} as they have blocked you."])
+        else:
+            respond_with(client.clientSocket, ["STARTPRIVATE", otherClient.peerIP, otherClient.peerPort, otherClient.username])
 
     def request_LOGOUT(self, client, args):
         print(f"got a logout request from {client.username}")
@@ -175,10 +213,11 @@ def authenticate(clientSocket):
             if client.triesLeft <= 0:
                 client.isBlocked = True
                 client.blockTime = time.time()
-                logout(client, "Invalid password. Your account has been blocked. Please try again later")
+                client.clientSocket = clientSocket # not online, so client has no clientSocket, so set to this one
+                logout(client, "Invalid password. Your account has been blocked. Please try again later.")
                 return None
             else:
-                respond_with(clientSocket, ["NOTOK", "Invalid password. Please try again"])
+                respond_with(clientSocket, ["NOTOK", "Invalid password. Please try again."])
         # valid, so login and setup client information
         else:
             respond_with(clientSocket, ["OK", "Welcome to the server."])
@@ -190,12 +229,16 @@ def authenticate(clientSocket):
             client.peerPort = peerPort
             client.loginTime = time.time()
             start_timer(client)
+            client.showPresence("in")
             return client
 
 def logout(client, string):
     print("logging out {client.username} with string {string}")
+    if client.isOnline:
+        client.showPresence("out")
     client.setLogoutInfo()
     respond_with(client.clientSocket, ["LOGOUT", string])
+    sys.exit(0)
 
 def new_client_handler(ip, port, clientSocket):
     print(f"new client handler made for client: {ip}:{port} with socket {clientSocket}")
@@ -206,6 +249,7 @@ def new_client_handler(ip, port, clientSocket):
         sys.exit(0)
 
     # TODO: retrieve any offline messages before going in to service loop
+    client.showOfflineMessages()
 
     print("going into servicing loop...")
     while True:
@@ -216,15 +260,19 @@ def new_client_handler(ip, port, clientSocket):
             # if the client socket has closed, then close this thread
             if len(request) == 0:
                 print("request len was 0")
-                client.setLogoutInfo()
-                sys.exit(0) # TODO: replace with function that cleans up the exited clients struct
+                # client.showPresence("out")
+                # client.setLogoutInfo()
+                sys.exit(0)
+                # TODO: replace with function that cleans up the exited clients struct
             print("about to run")
             # got a request from the client, so restart the timeout timer
             client.timer.cancel()
             start_timer(client)
             requestHandler.run(client, request)
         except error:
-            # socket is dead, meaning client closed the connection, so exit this client thread
+            # socket is dead, meaning client closed the connection in a bad way, so exit this client thread
+            # client.showPresence("out")
+            # client.setLogoutInfo()                
             sys.exit(0)
         
 def generate_response(lines):

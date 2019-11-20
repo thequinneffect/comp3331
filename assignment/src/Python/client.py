@@ -15,13 +15,15 @@ class ClientInformation():
         self.password = None
         self.peerIP = None
         self.peerPort = None
+        self.peerSocket = None
 clientInfo = ClientInformation()
+peers = {}
 
 class Responses():
 
     # generic success message with 0..* strings, returns True if needed
     def response_OK(self, args):
-        print(f"running response OK in client with args {args}")
+        #print(f"running response OK in client with args {args}")
         for string in args:
             print(string)
         return True
@@ -32,17 +34,25 @@ class Responses():
             print(string)
         return False
 
-    # server rejected username, so get a new one (+ password)
-    def response_BADUSER(self, args):
-        for string in args:
-            print(string)
-        clientInfo.username = input("username: ")
-        clientInfo.password = input("password: ")
-        request_with([clientInfo.username, clientInfo.password])
-        return False
+    def response_STARTPRIVATE(self, args):
+        peerIP = args[0]
+        peerPort = int(args[1])
+        peerUsername = args[2]
+        print(peerUsername)
+        print(f"for peerIP {peerIP} and peerPort {peerPort}")
+        print("setting up peering")
+        newPeerSocket = socket(AF_INET, SOCK_STREAM)
+        newPeerSocket.connect((peerIP,peerPort))
+        newPeerSocket.send(clientInfo.username.encode())
+        if peerUsername not in peers:
+            peers[peerUsername] = ClientInformation()
+        otherPeer = peers[peerUsername]
+        otherPeer.username = peerUsername
+        otherPeer.peerSocket = newPeerSocket
+        start_peering_thread(newPeerSocket)
 
-    def reponse_BADPASS(self, args):
-        print("might not need this")
+    def response_PRIVATE(self, args):
+        print(f"got private message {args}")
 
     def response_LOGOUT(self, args):
         for string in args:
@@ -62,7 +72,7 @@ responseHandler = Responses()
 def recv_responses():
     while True:
         response = serverSocket.recv(BUFSIZ).decode("utf-8")
-        print("being handled by recv in response handler")
+        #print("being handled by recv in response handler")
         responseHandler.run(response)
 
 def request_whoelse(data):
@@ -70,39 +80,61 @@ def request_whoelse(data):
     request_with(["WHOELSE"])
 
 def request_whoelsesince(data):
-    print(f"running request whoelse with string = {data}")
+    #print(f"running request whoelse with string = {data}")
     if data is None:
         print("Error. No duration specified.")
         return
     request_with(["WHOELSESINCE", data])
 
 def request_block(data):
-    print(f"running request block with string = {data}")
+    #print(f"running request block with string = {data}")
     if data is None:
         print("Error. No user specified.")
         return
     request_with(["BLOCK", data])
 
 def request_unblock(data):
-    print(f"running request unblock with string = {data}")
+    #print(f"running request unblock with string = {data}")
     if data is None:
         print("Error. No user specified.")
         return
     request_with(["UNBLOCK", data])
 
 def request_broadcast(data):
-    print(f"running request message with string = {data}")
+    #print(f"running request message with string = {data}")
     if data is None:
         print("Error. No message specified.")
         return
     request_with(["BROADCAST", data])
 
 def request_message(data):
-    print(f"running request message with string = {data}")
+    #print(f"running request message with string = {data}")
     if data is None:
         print("Error. No message specified.")
         return
-    request_with(["MESSAGE", data])
+    username, message = data.split(" ", 1)
+    request_with(["MESSAGE", username, message])
+
+def request_startprivate(data):
+    print(f"running request startprivate with string = {data}")
+    if data is None:
+        print("Error. No user specified.")
+        return
+    request_with(["STARTPRIVATE", data])
+
+def request_private(data):
+    print(f"running request private with string = {data}")
+    if data is None:
+        print("Error. No user or message specified.")
+        return
+    username, message = data.split(" ", 1)
+    if username not in peers:
+        print(f"Error. No private connection with {username} exists.")
+    try:
+        peerMessage = generate_request(["PRIVATE", message])
+        peers[username].peerSocket.send(peerMessage.encode())
+    except error:
+        print(f"Error. Private connection with {username} has closed.")
 
 def request_logout(data):
     #print(f"running request logout with string {request}")
@@ -115,6 +147,8 @@ requests = {
     "unblock" : request_unblock,
     "broadcast" : request_broadcast,
     "message" : request_message,
+    "startprivate" : request_startprivate,
+    "private" : request_private,
     "logout" : request_logout
 }
 
@@ -127,7 +161,7 @@ def send_requests():
         else:
             keyword = request
             data = None
-        print(f"keyword in client is: {keyword}, data is {data}")
+        #print(f"keyword in client is: {keyword}, data is {data}")
         request_handler = requests.get(keyword)
         if request_handler is None:
             print("Error. Unknown request")
@@ -175,6 +209,22 @@ def unpack_response(response):
     keyword = response[0]
     return keyword, response[1:]
 
+def start_peering_thread(peerSocket):
+    print("start_peering_thread called")
+    peerThread = threading.Thread(name="peerThread", target=new_peer_handler, args=[peerSocket])
+    peerThread.daemon=True
+    peerThread.start()
+
+def new_peer_handler(peerSocket):
+    print(f"starting a new peer handler on socket {peerSocket}")
+    while True:
+        try:
+            response = peerSocket.recv(BUFSIZ).decode("utf-8")
+            #print("being handled by recv in response handler")
+            responseHandler.run(response)
+        except error:
+            sys.exit(0)
+
 ##############################
 #           main()           #
 ##############################
@@ -197,11 +247,12 @@ serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.connect((serverIP, serverPort))
 
 # now create the local socket this client will be using for P2P messaging
-peerSocket = socket(AF_INET, SOCK_STREAM)
+peerWelcomeSocket = socket(AF_INET, SOCK_STREAM)
 # bind to port #0 to let OS pick a currently unused port (ensure clients have different port)
 
-peerSocket.bind((gethostbyname(gethostname()), 0))
-clientInfo.peerIP, clientInfo.peerPort = peerSocket.getsockname()
+peerWelcomeSocket.bind((gethostbyname(gethostname()), 0))
+clientInfo.peerIP, clientInfo.peerPort = peerWelcomeSocket.getsockname()
+peerWelcomeSocket.listen(1)
 
 # authenticate with the server
 login()
@@ -217,14 +268,14 @@ sendThread.daemon=True
 sendThread.start()
 
 while True:
-    time.sleep(0.1)
+    peerSocket, addr = peerWelcomeSocket.accept()
 
+    otherClientUsername = peerSocket.recv(BUFSIZ).decode("utf-8")
+    if otherClientUsername not in peers:
+        peers[otherClientUsername] = ClientInformation()
+    otherClient = peers[otherClientUsername]
+    otherClient.username = otherClientUsername
+    otherClient.peerSocket = peerSocket
+    print(f"passive peer set otherClient.username to {otherClient.username}")
 
-# TODO:
-"""
-    - 1 thread for sending to server (typing input and sending requests), 1 thread for receiving from server (servicing responses),
-    and another thread for p2p (or another 2 threads for peer to peer, peer sending and peer receiving?) 
-        - you have just 1 extra socket (actually a new port but whatever) for the peer to peer, but one (or maybe need two) new threads
-        per peer that joins
-        - If using Python, check socket.bind((' ', 0)). needed for getting unique client port num for each new client
-"""
+    start_peering_thread(peerSocket)
