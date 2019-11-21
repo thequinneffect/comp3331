@@ -38,9 +38,6 @@ class Responses():
         peerIP = args[0]
         peerPort = int(args[1])
         peerUsername = args[2]
-        print(peerUsername)
-        print(f"for peerIP {peerIP} and peerPort {peerPort}")
-        print("setting up peering")
         newPeerSocket = socket(AF_INET, SOCK_STREAM)
         newPeerSocket.connect((peerIP,peerPort))
         newPeerSocket.send(clientInfo.username.encode())
@@ -49,14 +46,18 @@ class Responses():
         otherPeer = peers[peerUsername]
         otherPeer.username = peerUsername
         otherPeer.peerSocket = newPeerSocket
+        print(f"A private connection with {peerUsername} has been started.")
         start_peering_thread(newPeerSocket)
 
-    def response_PRIVATE(self, args):
-        print(f"got private message {args}")
+    def response_STOPPRIVATE(self, args):
+        peerUsername = args[0]
+        remove_peer(peerUsername)
 
     def response_LOGOUT(self, args):
         for string in args:
             print(string)
+        peerUsernames = [username for username in peers]
+        for peerUsername in peerUsernames: request_stopprivate(peerUsername)
         os._exit(0)
 
     def run(self, response):
@@ -115,30 +116,58 @@ def request_message(data):
     username, message = data.split(" ", 1)
     request_with(["MESSAGE", username, message])
 
-def request_startprivate(data):
-    print(f"running request startprivate with string = {data}")
-    if data is None:
+def request_startprivate(peerUsername):
+    #print(f"running request startprivate with string = {data}")
+    if peerUsername is None:
         print("Error. No user specified.")
         return
-    request_with(["STARTPRIVATE", data])
+    elif peerUsername in peers:
+        print(f"Error. A private connection with {peerUsername} already exists.")
+    else:
+        request_with(["STARTPRIVATE", peerUsername])
 
 def request_private(data):
-    print(f"running request private with string = {data}")
+    #print(f"running request private with string = {data}")
     if data is None:
         print("Error. No user or message specified.")
         return
     username, message = data.split(" ", 1)
-    if username not in peers:
+    message = clientInfo.username + "(private): " + message
+    if username == clientInfo.username:
+        print(f"Error. You cannot private message yourself.")
+        return
+    elif username not in peers:
         print(f"Error. No private connection with {username} exists.")
+        return
     try:
-        peerMessage = generate_request(["PRIVATE", message])
+        peerMessage = generate_request(["OK", message])
         peers[username].peerSocket.send(peerMessage.encode())
     except error:
-        print(f"Error. Private connection with {username} has closed.")
+        print(f"Private connection with {username} has closed.")
+
+def request_stopprivate(username):
+    #print(f"running request stopprivate with string = {username}")
+    if username is None:
+        print("Error. No user or message specified.")
+        return
+    if username == clientInfo.username:
+        print(f"Error. No private connection exists with yourself.")
+        return
+    elif username not in peers:
+        print(f"Error. No private connection with {username} exists.")
+        return
+    message = generate_request(["STOPPRIVATE", clientInfo.username])
+    peers[username].peerSocket.send(message.encode())
+    remove_peer(username)
 
 def request_logout(data):
     #print(f"running request logout with string {request}")
     request_with(["LOGOUT"])
+
+def remove_peer(peerUsername):
+    peers[peerUsername].peerSocket.close()
+    del peers[peerUsername]
+    print(f"The private connection with {peerUsername} has ended.")
 
 requests = {
     "whoelse" : request_whoelse,
@@ -149,6 +178,7 @@ requests = {
     "message" : request_message,
     "startprivate" : request_startprivate,
     "private" : request_private,
+    "stopprivate" : request_stopprivate,
     "logout" : request_logout
 }
 
@@ -210,13 +240,11 @@ def unpack_response(response):
     return keyword, response[1:]
 
 def start_peering_thread(peerSocket):
-    print("start_peering_thread called")
     peerThread = threading.Thread(name="peerThread", target=new_peer_handler, args=[peerSocket])
     peerThread.daemon=True
     peerThread.start()
 
 def new_peer_handler(peerSocket):
-    print(f"starting a new peer handler on socket {peerSocket}")
     while True:
         try:
             response = peerSocket.recv(BUFSIZ).decode("utf-8")
@@ -276,6 +304,9 @@ while True:
     otherClient = peers[otherClientUsername]
     otherClient.username = otherClientUsername
     otherClient.peerSocket = peerSocket
-    print(f"passive peer set otherClient.username to {otherClient.username}")
-
+    print(f"{otherClientUsername} has started a private connection with you.")
     start_peering_thread(peerSocket)
+
+# TODO: pull out similar functionality, so far i have noticed i could abstract the checking of the data paramter in the
+# request functions, and i could make the function that the peer thread runs the same as the normal receiving one
+# as long as a socket is passed in

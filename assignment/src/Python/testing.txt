@@ -1,0 +1,3 @@
+login (correct creds, invalid username, valid user bad pass, already online, blocked, check
+	num attempts is reset on login and blocking)
+logout (should show notifications to others immediately and not crash anything)
