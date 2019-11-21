@@ -10,8 +10,6 @@ MAX_PORT_NO = 65535
 BUFSIZ = 512
 MAX_LOGIN_ATTEMPTS = 3
 
-threadLock = threading.Condition()
-
 class Client():
 
     def __init__(self, username, password):
@@ -54,6 +52,7 @@ class Client():
             respond_with(self.clientSocket, ["OK", response])
             self.offlineMessages.clear()
 
+# one entry of the above structure per client in credentials list
 clients = {}
 
 # command pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
@@ -221,13 +220,13 @@ def authenticate(clientSocket):
             client.showPresence("in")
             return client
 
+# function called by many points when logout is needed
 def logout(client, string):
-    #print("logging out {client.username} with string {string}")
     if client.isOnline:
-        client.showPresence("out")
-    client.setLogoutInfo()
-    respond_with(client.clientSocket, ["LOGOUT", string])
-    sys.exit(0)
+        client.showPresence("out") # handle presence showing
+    client.setLogoutInfo() # update client info to reflect logout
+    respond_with(client.clientSocket, ["LOGOUT", string]) # send the logout response to client to end them
+    sys.exit(0) # stop this thread as the client it services is now gone offline
 
 def new_client_handler(ip, port, clientSocket):
 
@@ -236,7 +235,7 @@ def new_client_handler(ip, port, clientSocket):
     if client is None: # auth failed, so close this thread
         sys.exit(0)
 
-    # TODO: retrieve any offline messages before going in to service loop
+    # retrieve any offline messages before going in to service loop
     client.showOfflineMessages()
 
     while True:
