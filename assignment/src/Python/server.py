@@ -246,19 +246,12 @@ def new_client_handler(ip, port, clientSocket):
             request = clientSocket.recv(BUFSIZ).decode("utf-8")
             # if the client socket has closed, then close this thread
             if len(request) == 0:
-                print("request len was 0")
-                # client.showPresence("out")
-                # client.setLogoutInfo()
                 sys.exit(0)
-                # TODO: replace with function that cleans up the exited clients struct
             # got a request from the client, so restart the timeout timer
             client.timer.cancel()
             start_timer(client)
             requestHandler.run(client, request)
-        except error:
-            # socket is dead, meaning client closed the connection in a bad way, so exit this client thread
-            # client.showPresence("out")
-            # client.setLogoutInfo()                
+        except error:              
             sys.exit(0)
         
 def generate_response(lines):
