@@ -1,11 +1,9 @@
-#python3
-
+# PYTHON 3 - z5117408
 import sys
 from socket import *
 import threading
 import datetime
-
-import time # only needed for testing atm
+import time
 
 MIN_ARGS = 4
 MAX_PORT_NO = 65535
@@ -58,7 +56,7 @@ class Client():
 
 clients = {}
 
-# request pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
+# command pattern credit: https://stackoverflow.com/questions/42227477/call-a-function-from-a-stored-string-in-python
 class Requests():
 
     def request_WHOELSE(self, client, args):
@@ -176,7 +174,7 @@ def start_timer(client):
 def authenticate(clientSocket):
     authenticated = False
     while not authenticated:
-        # receive and unpack authentication information
+        # receive and unpack expected client authentication information
         request = clientSocket.recv(BUFSIZ).decode("utf-8").split("\n")
         username = request[0]
         password = request[1]
@@ -280,12 +278,17 @@ if serverPort not in range(1, MAX_PORT_NO+1):
 blockDuration = int(sys.argv[2])
 timeoutTime = int(sys.argv[3])
 
+# read in the user-password pairs from the credentials file
+# store pairs in credentials dictionary and also create
+# one Client() structure per client
 client_creds = {}
 credentials = open("./credentials.txt","r")
 for cred in credentials:
     cred = cred.rstrip('\n')
     username, password = cred.split(" ")
+    # map username -> password
     client_creds[username] = password
+    # map username -> client information
     clients[username] = Client(username, password)
 
 # setup the server welcoming socket with ipv4 and tcp
@@ -293,24 +296,24 @@ welcomeSocket = socket(AF_INET, SOCK_STREAM)
 # make able to reuse port even if it is in the time wait state
 welcomeSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
-# this server is listening on this machine at port 12000
+# bind this socket to port <serverPort>
+# always host the server locally, hence localhost
 welcomeSocket.bind(('localhost', serverPort))
 
-# listen and only refuse max once
+# listen for connections, with max client queue of size 1
 welcomeSocket.listen(1)
 
+# this is the only server message printed! just to know that it is running
 print("Chat Server now online!")
 
-while 1:
+while True:
 
     # create a socket specifically for the client that has just requested a connection
     clientSocket, addr = welcomeSocket.accept()
+    # pack the args in an iterable type (list), so that the thread can accept them
     clientArgs = [addr[0], addr[1], clientSocket]
 
+    # create a new thread specifically for this client
     clientThread = threading.Thread(name="clientThread", target=new_client_handler, args=clientArgs)
     clientThread.daemon=True
     clientThread.start()
-
-# TODO: cleanup
-# TODO: graceful shutdown i.e. call close on the socket when logging out
-# TODO: possible locks needed

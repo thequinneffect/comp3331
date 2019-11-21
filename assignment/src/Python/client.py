@@ -1,4 +1,4 @@
-#coding: utf-8
+# PYTHON 3 - z5117408
 import sys, os
 from socket import *
 import threading
@@ -306,7 +306,3 @@ while True:
     otherClient.peerSocket = peerSocket
     print(f"{otherClientUsername} has started a private connection with you.")
     start_peering_thread(peerSocket)
-
-# TODO: pull out similar functionality, so far i have noticed i could abstract the checking of the data paramter in the
-# request functions, and i could make the function that the peer thread runs the same as the normal receiving one
-# as long as a socket is passed in
