@@ -1,0 +1,4 @@
+lec1 {
+    - don't think about time or speed of stuff moving through pipe when doing throughput, picture the pipes
+    as already full and just look at how much is coming in/out at any instance
+}
